@@ -50,5 +50,9 @@
     ]
   }
 }
+{
+  "type": "module",
+  "main": "src/index.tsx"
+}
 
    
