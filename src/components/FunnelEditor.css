@@ -1,0 +1,261 @@
+.funnel-editor {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.editor-header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-primary, .btn-secondary {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+}
+
+.editor-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 300px;
+  background: #f8f9fa;
+  border-right: 1px solid #e9ecef;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.canvas-container {
+  flex: 1;
+  position: relative;
+}
+
+.properties-panel {
+  width: 350px;
+  background: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+/* Quiz Node Styles */
+.quiz-node {
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  min-width: 280px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.quiz-node.selected {
+  border-color: #007bff;
+  box-shadow: 0 0 0 3px rgba(0,123,255,0.25);
+}
+
+.node-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #333;
+}
+
+.node-icon {
+  margin-right: 8px;
+  font-size: 18px;
+}
+
+.quiz-content {
+  margin-top: 12px;
+}
+
+.quiz-question-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.quiz-answers {
+  margin-bottom: 20px;
+}
+
+.answer-group {
+  margin-bottom: 12px;
+}
+
+.answer-input, .affiliate-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.affiliate-input {
+  font-size: 11px;
+  color: #666;
+}
+
+.color-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.color-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.color-group label {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.color-group input[type="color"] {
+  width: 40px;
+  height: 30px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Element Library Styles */
+.element-library h3 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1rem;
+}
+
+.elements-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.element-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.element-item:hover {
+  border-color: #007bff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.element-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.element-name {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.templates-section {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1rem;
+}
+
+.template-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  font-size: 14px;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.template-btn:hover {
+  border-color: #007bff;
+  background: #f8f9ff;
+}
+
+/* Preview Styles */
+.quiz-preview {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.quiz-preview h3 {
+  margin: 0 0 1rem 0;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .editor-layout {
+    flex-direction: column;
+  }
+  
+  .sidebar,
+  .properties-panel {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+  }
+  
+  .color-controls {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
