@@ -1,0 +1,26 @@
+.editor-page {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+}
+
+.editor-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* 响应式布局 */
+@media (max-width: 1024px) {
+  .editor-layout {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .editor-page {
+    height: auto;
+    min-height: 100vh;
+  }
+}
