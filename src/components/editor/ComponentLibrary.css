@@ -1,0 +1,126 @@
+.component-library {
+  width: 300px;
+  background: white;
+  border-right: 1px solid #e9ecef;
+  padding: 1.5rem;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.library-header {
+  margin-bottom: 2rem;
+}
+
+.library-header h3 {
+  color: #333;
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+}
+
+.library-header p {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.components-list {
+  margin-bottom: 2rem;
+}
+
+.component-item {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background: #f8f9fa;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  margin-bottom: 0.8rem;
+  cursor: grab;
+  transition: all 0.3s ease;
+}
+
+.component-item:hover {
+  border-color: #667eea;
+  background: #f0f2ff;
+  transform: translateX(4px);
+}
+
+.component-item.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.component-icon {
+  font-size: 1.5rem;
+  margin-right: 1rem;
+}
+
+.component-info h4 {
+  color: #333;
+  font-size: 1rem;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.component-info p {
+  color: #666;
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.templates-section {
+  border-top: 1px solid #e9ecef;
+  padding-top: 1.5rem;
+}
+
+.templates-section h3 {
+  color: #333;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.template-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.template-btn {
+  padding: 0.8rem;
+  background: white;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  text-align: left;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #333;
+  transition: all 0.3s ease;
+}
+
+.template-btn:hover {
+  border-color: #667eea;
+  background: #f0f2ff;
+  transform: translateX(2px);
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .component-library {
+    width: 100%;
+    height: auto;
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1px solid #e9ecef;
+  }
+  
+  .components-list {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+  }
+  
+  .component-item {
+    min-width: 200px;
+    margin-bottom: 0;
+  }
+}
