@@ -2,6 +2,8 @@
   "name": "funnel-editor",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
+  "main": "src/index.tsx",
   "homepage": "https://junes231.github.io/funnel-editor",
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.4",
@@ -50,9 +52,3 @@
     ]
   }
 }
-{
-  "type": "module",
-  "main": "src/index.tsx"
-}
-
-   
