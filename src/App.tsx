@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router } from 'react-router-dom';
 import './App.css';
 
 function App() {
@@ -408,8 +408,9 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="App">
+    <Router basename="/funnel-editor">
+
+     <div className="App">
         {renderContent()}
       </div>
     </Router>
