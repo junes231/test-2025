@@ -25,8 +25,8 @@ function App() {
             
             <div 
               onClick={() => {
-                alert('问答组件编辑器');
-                console.log('点击了问答组件区域');
+                setCurrentView('questionEditor');
+                console.log('打开问答组件编辑器');
               }}
               style={{ 
                 border: '2px dashed #007bff', 
@@ -37,12 +37,6 @@ function App() {
                 backgroundColor: '#f8f9fa',
                 transition: 'all 0.3s ease'
               }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#e3f2fd';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#f8f9fa';
-              }}
             >
               <h3>📝 问答组件区域</h3>
               <p>点击这里添加问答题目</p>
@@ -51,8 +45,8 @@ function App() {
 
             <div 
               onClick={() => {
-                alert('联盟链接设置面板');
-                console.log('点击了联盟链接设置');
+                setCurrentView('linkSettings');
+                console.log('打开联盟链接设置');
               }}
               style={{ 
                 border: '2px dashed #28a745', 
@@ -63,12 +57,6 @@ function App() {
                 backgroundColor: '#f8f9fa',
                 transition: 'all 0.3s ease'
               }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#e8f5e8';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#f8f9fa';
-              }}
             >
               <h3>🔗 联盟链接设置</h3>
               <p>点击这里配置推广链接</p>
@@ -77,8 +65,8 @@ function App() {
 
             <div 
               onClick={() => {
-                alert('颜色自定义面板');
-                console.log('点击了颜色自定义');
+                setCurrentView('colorCustomizer');
+                console.log('打开颜色自定义');
               }}
               style={{ 
                 border: '2px dashed #dc3545', 
@@ -88,12 +76,6 @@ function App() {
                 cursor: 'pointer',
                 backgroundColor: '#f8f9fa',
                 transition: 'all 0.3s ease'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.backgroundColor = '#ffeaea';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.backgroundColor = '#f8f9fa';
               }}
             >
               <h3>🎨 颜色自定义</h3>
@@ -116,6 +98,216 @@ function App() {
             </button>
           </div>
         );
+
+      case 'questionEditor':
+        return (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>📝 问答组件编辑器</h2>
+            <div style={{ margin: '20px 0', textAlign: 'left' }}>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                问题标题：
+                <input 
+                  type="text" 
+                  placeholder="例如：你最关心的健康问题是什么？" 
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                问题类型：
+                <select style={{ width: '100%', padding: '8px', margin: '5px 0' }}>
+                  <option>单选题</option>
+                  <option>多选题</option>
+                  <option>文本输入</option>
+                </select>
+              </label>
+              <div style={{ margin: '15px 0' }}>
+                <p>答案选项：</p>
+                <input placeholder="选项A：减肥瘦身" style={{ width: '100%', padding: '8px', margin: '3px 0' }} />
+                <input placeholder="选项B：增肌健身" style={{ width: '100%', padding: '8px', margin: '3px 0' }} />
+                <input placeholder="选项C：改善睡眠" style={{ width: '100%', padding: '8px', margin: '3px 0' }} />
+              </div>
+            </div>
+            <div style={{ marginTop: '30px' }}>
+              <button 
+                onClick={() => {
+                  alert('问答组件已保存！');
+                  setCurrentView('editor');
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#007bff',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  marginRight: '10px'
+                }}
+              >
+                💾 保存问答
+              </button>
+              <button 
+                onClick={() => setCurrentView('editor')}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                ← 返回编辑器
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'linkSettings':
+        return (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>🔗 联盟链接设置</h2>
+            <div style={{ margin: '20px 0', textAlign: 'left' }}>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                ClickBank链接：
+                <input 
+                  type="text" 
+                  placeholder="https://clickbank.com/..." 
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                Amazon联盟链接：
+                <input 
+                  type="text" 
+                  placeholder="https://amazon.com/..." 
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                跟踪参数：
+                <input 
+                  type="text" 
+                  placeholder="utm_source=funnel&utm_campaign=..." 
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                转化目标：
+                <select style={{ width: '100%', padding: '8px', margin: '5px 0' }}>
+                  <option>产品购买</option>
+                  <option>邮箱订阅</option>
+                  <option>免费试用</option>
+                </select>
+              </label>
+            </div>
+            <div style={{ marginTop: '30px' }}>
+              <button 
+                onClick={() => {
+                  alert('联盟链接设置已保存！');
+                  setCurrentView('editor');
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#28a745',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  marginRight: '10px'
+                }}
+              >
+                💾 保存设置
+              </button>
+              <button 
+                onClick={() => setCurrentView('editor')}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                ← 返回编辑器
+              </button>
+            </div>
+          </div>
+        );
+
+      case 'colorCustomizer':
+        return (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h2>🎨 颜色自定义</h2>
+            <div style={{ margin: '20px 0', textAlign: 'left' }}>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                主色调：
+                <input 
+                  type="color" 
+                  defaultValue="#007bff"
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                按钮颜色：
+                <input 
+                  type="color" 
+                  defaultValue="#28a745"
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                背景颜色：
+                <input 
+                  type="color" 
+                  defaultValue="#f8f9fa"
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+              <label style={{ display: 'block', margin: '10px 0' }}>
+                文字颜色：
+                <input 
+                  type="color" 
+                  defaultValue="#333333"
+                  style={{ width: '100%', padding: '8px', margin: '5px 0' }}
+                />
+              </label>
+            </div>
+            <div style={{ marginTop: '30px' }}>
+              <button 
+                onClick={() => {
+                  alert('颜色主题已保存！');
+                  setCurrentView('editor');
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#dc3545',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer',
+                  marginRight: '10px'
+                }}
+              >
+                💾 保存主题
+              </button>
+              <button 
+                onClick={() => setCurrentView('editor')}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#6c757d',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '5px',
+                  cursor: 'pointer'
+                }}
+              >
+                ← 返回编辑器
+              </button>
+            </div>
+          </div>
+        );
+
       case 'preview':
         return (
           <div style={{ padding: '20px', textAlign: 'center' }}>
@@ -128,9 +320,14 @@ function App() {
               borderRadius: '8px',
               backgroundColor: '#f8f9fa'
             }}>
-              <p>📊 漏斗流程预览</p>
-              <p>📱 移动端适配</p>
-              <p>🔗 链接跳转测试</p>
+              <h3>📊 漏斗流程预览</h3>
+              <div style={{ margin: '20px 0' }}>
+                <p>1️⃣ 问答互动 → 了解用户需求</p>
+                <p>2️⃣ 个性化推荐 → 匹配最佳产品</p>
+                <p>3️⃣ 联盟链接跳转 → 完成转化</p>
+              </div>
+              <p>📱 移动端适配完美</p>
+              <p>🔗 链接跳转测试正常</p>
             </div>
             <button 
               onClick={() => setCurrentView('home')}
@@ -147,6 +344,7 @@ function App() {
             </button>
           </div>
         );
+
       default:
         return (
           <div style={{
