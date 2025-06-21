@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.css';
 
 function App() {
@@ -19,18 +20,87 @@ function App() {
       case 'editor':
         return (
           <div style={{ padding: '20px', textAlign: 'center' }}>
-            <h2>🎨 漏斗编辑器</h2>
+            <h2>🥞 漏斗编辑器</h2>
             <p>拖拽组件来创建你的营销漏斗</p>
-            <div style={{ 
-              border: '2px dashed #ccc', 
-              padding: '40px', 
-              margin: '20px 0',
-              borderRadius: '8px'
-            }}>
-              <p>📝 问答组件区域</p>
-              <p>🔗 联盟链接设置</p>
-              <p>🎨 颜色自定义</p>
+            
+            <div 
+              onClick={() => {
+                alert('问答组件编辑器');
+                console.log('点击了问答组件区域');
+              }}
+              style={{ 
+                border: '2px dashed #007bff', 
+                padding: '40px', 
+                margin: '20px 0',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: '#f8f9fa',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#e3f2fd';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#f8f9fa';
+              }}
+            >
+              <h3>📝 问答组件区域</h3>
+              <p>点击这里添加问答题目</p>
+              <small>支持单选、多选、文本输入等类型</small>
             </div>
+
+            <div 
+              onClick={() => {
+                alert('联盟链接设置面板');
+                console.log('点击了联盟链接设置');
+              }}
+              style={{ 
+                border: '2px dashed #28a745', 
+                padding: '40px', 
+                margin: '20px 0',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: '#f8f9fa',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#e8f5e8';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#f8f9fa';
+              }}
+            >
+              <h3>🔗 联盟链接设置</h3>
+              <p>点击这里配置推广链接</p>
+              <small>设置ClickBank、Amazon等联盟链接</small>
+            </div>
+
+            <div 
+              onClick={() => {
+                alert('颜色自定义面板');
+                console.log('点击了颜色自定义');
+              }}
+              style={{ 
+                border: '2px dashed #dc3545', 
+                padding: '40px', 
+                margin: '20px 0',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: '#f8f9fa',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#ffeaea';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#f8f9fa';
+              }}
+            >
+              <h3>🎨 颜色自定义</h3>
+              <p>点击这里自定义主题颜色</p>
+              <small>调整按钮、背景、文字颜色</small>
+            </div>
+
             <button 
               onClick={() => setCurrentView('home')}
               style={{
@@ -140,9 +210,11 @@ function App() {
   };
 
   return (
-    <div className="App">
-      {renderContent()}
-    </div>
+    <Router>
+      <div className="App">
+        {renderContent()}
+      </div>
+    </Router>
   );
 }
 
