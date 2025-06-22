@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
-import { HashRouter } from 'react-router-dom';
 import './App.css';
-
 function App() {
   const [currentView, setCurrentView] = useState('home');
-
-  const handleStartClick = () => {
+ const handleStartClick = () => {
     console.log('开始创建按钮被点击');
     setCurrentView('editor');
   };
@@ -408,11 +405,11 @@ function App() {
   };
 
   return (
-    <HashRouter>
+    
       <div className="App">
         {renderContent()}
       </div>
-    </HashRouter>
+    
   );
 }
 
