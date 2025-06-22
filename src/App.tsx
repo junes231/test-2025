@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HashRouter as Router } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import './App.css';
 
 function App() {
