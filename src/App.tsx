@@ -408,11 +408,11 @@ function App() {
   };
 
   return (
-    <Router basename="/funnel-editor">
+    <HashRouter>
       <div className="App">
         {renderContent()}
       </div>
-    </Router>
+    </HashRouter>
   );
 }
 
