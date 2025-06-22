@@ -9,14 +9,14 @@ permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: Setup Node
         uses: actions/setup-node@v3
         with:
           node-version: 18
@@ -24,11 +24,10 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Install gh-pages
-        run: npm install --save-dev gh-pages
-
       - name: Build app
         run: npm run build
 
       - name: Deploy to GitHub Pages
-        run: npx gh-pages -d build
+        run: |
+          npm install -g gh-pages
+          npx gh-pages -d build
