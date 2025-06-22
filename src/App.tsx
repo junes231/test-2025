@@ -409,8 +409,7 @@ function App() {
 
   return (
     <Router basename="/funnel-editor">
-
-     <div className="App">
+      <div className="App">
         {renderContent()}
       </div>
     </Router>
