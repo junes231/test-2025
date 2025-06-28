@@ -1,12 +1,28 @@
-steps:
-      - name: Checkout
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Use Node.js # <--- 这一步被修改了！
+      - name: Use Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Node.js 版本保持不变
-          npm-version: '8'   # <--- 新增的行！强制使用 npm v8
+          node-version: '18'
+          npm-version: '8'
 
       - name: Clear npm cache
         run: npm cache clean --force
