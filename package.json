@@ -17,6 +17,7 @@
     "typescript": "^4.9.5",
     "react-router-dom": "6.8.1",
     "ajv": "6.12.6"
+    "ajv-keywords": "3.5.2"
   },
   "devDependencies": {
     "gh-pages": "^6.0.0",
