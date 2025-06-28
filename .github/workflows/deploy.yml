@@ -1,40 +1,25 @@
-name: Deploy to GitHub Pages # 工作流的名称
+steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-on: # 触发工作流的事件
-  push:
-    branches:
-      - main # 当代码推送到 main 分支时触发此工作流
-
-jobs: # 定义一个或多个作业
-  build-and-deploy: # 作业的ID，您可以自定义
-    runs-on: ubuntu-latest # 指定作业运行的操作系统环境
-
-    permissions: # <--- 权限设置，非常重要！
-      contents: write # 允许写入仓库内容，以便部署
-      pages: write    # 允许管理 GitHub Pages 部署
-      id-token: write # 允许 OIDC 身份认证，某些部署Action可能需要
-
-    steps: # 作业的执行步骤
-      - name: Checkout repository # 步骤名称：检出代码
-        uses: actions/checkout@v4 # 使用 GitHub 官方的检出 Action
-
-      - name: Setup Node.js # 步骤名称：设置 Node.js 环境
-        uses: actions/setup-node@v4 # 使用 GitHub 官方的 Node.js 设置 Action
+      - name: Use Node.js # <--- 这一步被修改了！
+        uses: actions/setup-node@v4
         with:
-          node-version: '18' # 指定使用 Node.js 18 版本
+          node-version: '18' # Node.js 版本保持不变
+          npm-version: '8'   # <--- 新增的行！强制使用 npm v8
 
-      - name: Clear npm cache # 步骤名称：清除 npm 缓存 (我们之前添加的，解决顽固错误)
-        run: npm cache clean --force # 运行命令强制清除 npm 缓存
+      - name: Clear npm cache
+        run: npm cache clean --force
 
-      - name: Install dependencies # 步骤名称：安装项目依赖
-        run: npm install --legacy-peer-deps # 运行 npm install，并使用 --legacy-peer-deps 参数解决依赖冲突
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
 
-      - name: Run npm run build # 步骤名称：运行构建命令
-        run: npm run build # 运行 package.json 中定义的构建脚本
+      - name: Run npm run build
+        run: npm run build
 
-      - name: Deploy to GitHub Pages # 步骤名称：部署到 GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3 # 使用 peaceiris 提供的 GitHub Pages 部署 Action
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }} # 您的 GitHub 令牌（由 GitHub Actions 自动提供）
-          publish_dir: ./build # 指定构建输出目录（通常是 build 文件夹）
-          publish_branch: gh-pages # 指定要发布到的分支（gh-pages 分支）
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build
+          publish_branch: gh-pages
