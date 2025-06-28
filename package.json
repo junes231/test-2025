@@ -1,5 +1,5 @@
 {
-  "name": "ab-funnel-editor",
+  "name": "funnel-editor",
   "version": "1.0.0",
   "description": "A/B Testing Multi-step Funnel Editor with React + TypeScript",
   "private": true,
