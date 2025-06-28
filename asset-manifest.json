@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/ab-funnel-editor/static/css/main.9c823cae.css",
-    "main.js": "/ab-funnel-editor/static/js/main.4b03977f.js",
-    "index.html": "/ab-funnel-editor/index.html",
-    "main.9c823cae.css.map": "/ab-funnel-editor/static/css/main.9c823cae.css.map",
-    "main.4b03977f.js.map": "/ab-funnel-editor/static/js/main.4b03977f.js.map"
+    "main.css": "/funnel-editor/static/css/main.9c823cae.css",
+    "main.js": "/funnel-editor/static/js/main.4b03977f.js",
+    "index.html": "/funnel-editor/index.html",
+    "main.9c823cae.css.map": "/funnel-editor/static/css/main.9c823cae.css.map",
+    "main.4b03977f.js.map": "/funnel-editor/static/js/main.4b03977f.js.map"
   },
   "entrypoints": [
     "static/css/main.9c823cae.css",
