@@ -262,4 +262,46 @@ p {
         padding: 30px;
     }
 }
-  
+
+/* App.css additions for affiliate link input */
+.answer-input-group {
+    display: flex; /* Arrange text and link inputs side-by-side */
+    gap: 10px; /* Space between text and link input */
+    margin-bottom: 8px; /* Space between answer groups */
+    align-items: center;
+}
+
+.answer-input-group input[type="text"] {
+    flex: 2; /* Text input takes more space */
+}
+
+.answer-input-group .affiliate-link-input {
+    flex: 1; /* Affiliate link input takes less space */
+    min-width: 150px; /* Ensure it's not too squashed */
+    font-size: 0.85em; /* Smaller text for link */
+    padding: 8px;
+}
+
+/* Adjust the overall input styles for better consistency */
+.form-group input,
+.answer-options-section input,
+.answer-input-group input {
+    width: 100%; /* Default to full width */
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-top: 5px;
+}
+
+/* Adjust button width for smaller screens in form actions */
+@media (max-width: 600px) {
+    .answer-input-group {
+        flex-direction: column; /* Stack inputs vertically on small screens */
+        gap: 5px;
+    }
+    .answer-input-group input {
+        flex: unset; /* Remove flex sizing when stacked */
+        width: 100%; /* Ensure they take full width */
+    }
+}
