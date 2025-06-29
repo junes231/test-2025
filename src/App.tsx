@@ -1,103 +1,295 @@
-import React, { useState, useEffect } from 'react';
-import './App.css'; // Make sure you have this CSS file for basic styling
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
+import {
+  collection,
+  doc,
+  addDoc,
+  getDocs,
+  updateDoc,
+  deleteDoc,
+  Firestore,
+  query,
+  where,
+  getDoc
+} from 'firebase/firestore';
+import './App.css'; // Make sure you have this CSS file for styling
 
-// Define TypeScript interfaces for better type safety
+// Define TypeScript interfaces
 interface Answer {
-  id: string; // Unique ID for the answer option
-  text: string; // The text of the answer
+  id: string;
+  text: string;
 }
 
 interface Question {
-  id: string; // Unique ID for the question
-  title: string; // The question text
-  type: 'single-choice' | 'text-input'; // For now, we'll focus on single-choice for answers, but kept type for future
-  answers: Answer[]; // Array of answer options
+  id: string;
+  title: string;
+  type: 'single-choice' | 'text-input';
+  answers: Answer[];
 }
 
-// Helper to load questions from local storage
-const loadQuestionsFromLocalStorage = (): Question[] => {
-  try {
-    const storedQuestions = localStorage.getItem('quizQuestions');
-    // Ensure all answers have an ID for React keys
-    const parsedQuestions: Question[] = storedQuestions ? JSON.parse(storedQuestions) : [];
-    return parsedQuestions.map(q => ({
-      ...q,
-      answers: q.answers.map(a => ({ ...a, id: a.id || Date.now().toString() + Math.random().toString() }))
-    }));
-  } catch (error) {
-    console.error("Failed to load questions from local storage:", error);
-    return [];
-  }
+interface FunnelData {
+  questions: Question[];
+  finalRedirectLink: string;
+  tracking: string;
+  conversionGoal: string;
+}
+
+interface Funnel {
+  id: string; // Document ID in Firestore
+  name: string; // Funnel name
+  data: FunnelData;
+}
+
+// Props for the main App component, now accepting db from index.tsx
+interface AppProps {
+  db: Firestore;
+}
+
+export default function App({ db }: AppProps) {
+  const navigate = useNavigate(); // Hook for programmatic navigation
+
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
+  const funnelsCollectionRef = collection(db, 'funnels'); // Firestore collection reference
+
+  // --- Data Loading from Firestore ---
+  const getFunnels = useCallback(async () => {
+    try {
+      const data = await getDocs(funnelsCollectionRef);
+      const loadedFunnels = data.docs.map((doc) => ({
+        ...(doc.data() as Funnel), // Cast to Funnel interface
+        id: doc.id, // Ensure id is from doc.id
+      }));
+
+      // --- Migration Logic from old localStorage (run once) ---
+      const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
+      const oldQuizQuestions = localStorage.getItem('quizQuestions');
+      const oldAffiliateLinks = localStorage.getItem('affiliateLinks');
+
+      if (!hasMigrated && oldQuizQuestions && oldAffiliateLinks) {
+        const parsedOldQuestions: Question[] = JSON.parse(oldQuizQuestions);
+        const parsedOldLinks = JSON.parse(oldAffiliateLinks);
+
+        if (parsedOldQuestions.length > 0) {
+          console.log("Migrating old local storage data to Firestore...");
+          const newFunnel: FunnelData = {
+            questions: parsedOldQuestions,
+            finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
+            tracking: parsedOldLinks.tracking || '',
+            conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
+          };
+          await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: newFunnel });
+          localStorage.setItem('hasMigratedToFirestore', 'true'); // Mark as migrated
+          alert('Old quiz data migrated to Firestore! Please refresh.');
+          window.location.reload(); // Force reload to see new data
+        }
+      }
+      // --- End Migration Logic ---
+
+      setFunnels(loadedFunnels);
+    } catch (error) {
+      console.error("Error fetching funnels:", error);
+      alert("Failed to load funnels from database. Check console for details.");
+    }
+  }, [funnelsCollectionRef]);
+
+  useEffect(() => {
+    getFunnels();
+  }, [getFunnels]);
+
+  // --- Funnel Management Functions ---
+  const createFunnel = async (name: string, initialData?: FunnelData) => {
+    try {
+      const newFunnelRef = await addDoc(funnelsCollectionRef, {
+        name: name,
+        data: initialData || { questions: [], finalRedirectLink: '', tracking: '', conversionGoal: 'Product Purchase' },
+      });
+      alert(`Funnel "${name}" created!`);
+      getFunnels(); // Refresh list
+      navigate(`/edit/${newFunnelRef.id}`); // Navigate to edit new funnel
+    } catch (error) {
+      console.error("Error creating funnel:", error);
+      alert("Failed to create funnel. Check console for details.");
+    }
+  };
+
+  const deleteFunnel = async (funnelId: string) => {
+    if (window.confirm("Are you sure you want to delete this funnel? This action cannot be undone.")) {
+      try {
+        const funnelDoc = doc(db, 'funnels', funnelId);
+        await deleteDoc(funnelDoc);
+        alert('Funnel deleted!');
+        getFunnels(); // Refresh list
+        navigate('/'); // Go back to dashboard
+      } catch (error) {
+        console.error("Error deleting funnel:", error);
+        alert("Failed to delete funnel. Check console for details.");
+      }
+    }
+  };
+
+  const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
+    try {
+      const funnelDoc = doc(db, 'funnels', funnelId);
+      await updateDoc(funnelDoc, { data: newData });
+      getFunnels(); // Refresh list to reflect changes
+      // alert('Funnel data saved!');
+    } catch (error) {
+      console.error("Error updating funnel:", error);
+      alert("Failed to save funnel data. Check console for details.");
+    }
+  };
+
+  // --- Render Routes ---
+  return (
+    <Routes>
+      <Route path="/" element={<FunnelDashboard funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
+      <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
+      <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
+      <Route path="*" element={<h2>404 Not Found</h2>} /> {/* Catch-all for unknown routes */}
+    </Routes>
+  );
+}
+
+// --- Individual Components (Moved outside App, but still in the same file for simplicity) ---
+
+// FunnelDashboard Component
+interface FunnelDashboardProps {
+  funnels: Funnel[];
+  createFunnel: (name: string, initialData?: FunnelData) => Promise<void>;
+  deleteFunnel: (funnelId: string) => Promise<void>;
+}
+
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel, deleteFunnel }) => {
+  const [newFunnelName, setNewFunnelName] = useState('');
+  const navigate = useNavigate();
+
+  const handleCreateFunnel = () => {
+    if (!newFunnelName.trim()) {
+      alert('Please enter a funnel name.');
+      return;
+    }
+    createFunnel(newFunnelName);
+    setNewFunnelName(''); // Clear input
+  };
+
+  const handleCopyLink = (funnelId: string) => {
+    const shareLink = `${window.location.origin}${window.location.pathname}#/play/${funnelId}`; // Uses HashRouter path
+    navigator.clipboard.writeText(shareLink)
+      .then(() => alert(`Share link copied: ${shareLink}`))
+      .catch((err) => {
+        console.error('Failed to copy link:', err);
+        alert('Failed to copy link. Please copy it manually from the console.');
+      });
+  };
+
+  return (
+    <div className="dashboard-container">
+      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
+      <div className="create-funnel-section">
+        <input
+          type="text"
+          placeholder="New Funnel Name"
+          value={newFunnelName}
+          onChange={(e) => setNewFunnelName(e.target.value)}
+          className="funnel-name-input"
+        />
+        <button className="add-button" onClick={handleCreateFunnel}>
+          <span role="img" aria-label="add">➕</span> Create New Funnel
+        </button>
+      </div>
+
+      {funnels.length === 0 ? (
+        <p className="no-funnels-message">No funnels created yet. Start by creating one!</p>
+      ) : (
+        <ul className="funnel-list">
+          {funnels.map((funnel) => (
+            <li key={funnel.id} className="funnel-item">
+              <span>{funnel.name}</span>
+              <div className="funnel-actions">
+                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>
+                  Edit
+                </button>
+                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>
+                  Play
+                </button>
+                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>
+                  Copy Link
+                </button>
+                <button className="button-link delete-button" onClick={() => deleteFunnel(funnel.id)}>
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 };
 
-// Helper to save questions to local storage
-const saveQuestionsToLocalStorage = (questions: Question[]) => {
-  try {
-    localStorage.setItem('quizQuestions', JSON.stringify(questions));
-  } catch (error) {
-    console.error("Failed to save questions to local storage:", error);
-  }
-};
+// FunnelEditor (now for editing a specific funnel's quiz & links)
+interface FunnelEditorProps {
+  db: Firestore;
+  updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
+}
 
-// Helper to load affiliate links from local storage (now simplified)
-const loadAffiliateLinksFromLocalStorage = () => {
-  try {
-    const storedLinks = localStorage.getItem('affiliateLinks');
-    const parsed = storedLinks ? JSON.parse(storedLinks) : {};
-    return { 
-      finalRedirectLink: parsed.finalRedirectLink || '', // Primary link
-      tracking: parsed.tracking || '', 
-      conversionGoal: parsed.conversionGoal || 'Product Purchase' 
-    };
-  } catch (error) {
-    console.error("Failed to load affiliate links from local storage:", error);
-    return { finalRedirectLink: '', tracking: '', conversionGoal: 'Product Purchase' };
-  }
-};
+const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
+  const { funnelId } = useParams<{ funnelId: string }>(); // Get funnelId from URL
+  const navigate = useNavigate();
 
-// Helper to save affiliate links to local storage
-const saveAffiliateLinksToLocalStorage = (links: any) => {
-  try {
-    localStorage.setItem('affiliateLinks', JSON.stringify(links));
-  } catch (error) {
-    console.error("Failed to save affiliate links to local storage:", error);
-  }
-};
-
-export default function App() {
-  const [currentView, setCurrentView] = useState('home');
+  const [funnelName, setFunnelName] = useState('Loading...');
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [finalRedirectLink, setFinalRedirectLink] = useState('');
+  const [tracking, setTracking] = useState('');
+  const [conversionGoal, setConversionGoal] = useState('Product Purchase');
+
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [affiliateLinks, setAffiliateLinks] = useState(loadAffiliateLinksFromLocalStorage());
-  const [currentQuizQuestionIndex, setCurrentQuizQuestionIndex] = useState(0); // For quiz play mode
+  const [currentSubView, setCurrentSubView] = useState('quizEditorList'); // 'quizEditorList', 'questionForm', 'linkSettings', 'colorCustomizer'
 
-  // Load questions and links from local storage on component mount
+  // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
-    setQuestions(loadQuestionsFromLocalStorage());
-    setAffiliateLinks(loadAffiliateLinksFromLocalStorage());
-  }, []);
+    const getFunnel = async () => {
+      if (!funnelId) return;
+      const funnelDocRef = doc(db, 'funnels', funnelId);
+      const funnelDoc = await getDoc(funnelDocRef);
+      if (funnelDoc.exists()) {
+        const funnel = funnelDoc.data() as Funnel;
+        setFunnelName(funnel.name);
+        setQuestions(funnel.data.questions || []);
+        setFinalRedirectLink(funnel.data.finalRedirectLink || '');
+        setTracking(funnel.data.tracking || '');
+        setConversionGoal(funnel.data.conversionGoal || 'Product Purchase');
+      } else {
+        alert('Funnel not found!');
+        navigate('/'); // Go back to dashboard
+      }
+    };
+    getFunnel();
+  }, [funnelId, db, navigate]);
 
-  // Save questions and links to local storage whenever they change
+  // Save funnel data to Firestore whenever relevant states change
+  // Use a debounce or save button for large forms in production
+  const saveFunnelToFirestore = useCallback(() => {
+    if (!funnelId) return;
+    const newData: FunnelData = {
+      questions,
+      finalRedirectLink,
+      tracking,
+      conversionGoal,
+    };
+    updateFunnelData(funnelId, newData);
+  }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal, updateFunnelData]);
+
+  // Use useEffect to save changes automatically, with a debounce for performance
   useEffect(() => {
-    saveQuestionsToLocalStorage(questions);
-  }, [questions]);
+    const handler = setTimeout(() => {
+      saveFunnelToFirestore();
+    }, 1000); // Save 1 second after last change
+    return () => clearTimeout(handler);
+  }, [questions, finalRedirectLink, tracking, conversionGoal, saveFunnelToFirestore]);
 
-  useEffect(() => {
-    saveAffiliateLinksToLocalStorage(affiliateLinks);
-  }, [affiliateLinks]);
 
-  // --- Handlers for general navigation ---
-  const handleStartClick = () => {
-    setCurrentView('editor');
-  };
-
-  const handlePreviewClick = () => {
-    // Reset quiz state before playing
-    setCurrentQuizQuestionIndex(0);
-    setCurrentView('quizPlay');
-  };
-
-  // --- Handlers for Quiz Editor ---
+  // --- Quiz Question Management in Editor ---
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
       alert('You can only have up to 6 questions for this quiz.');
@@ -107,21 +299,16 @@ export default function App() {
       id: Date.now().toString(),
       title: `New Question ${questions.length + 1}`,
       type: 'single-choice',
-      answers: [
-        { id: 'a', text: 'Option A' },
-        { id: 'b', text: 'Option B' },
-        { id: 'c', text: 'Option C' },
-        { id: 'd', text: 'Option D' },
-      ],
+      answers: Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` })),
     };
     setQuestions([...questions, newQuestion]);
-    setSelectedQuestionIndex(questions.length); // Select the new question for editing
-    setCurrentView('questionForm'); // Navigate to the form
+    setSelectedQuestionIndex(questions.length); // Select the new question
+    setCurrentSubView('questionForm'); // Navigate to the form
   };
 
   const handleEditQuestion = (index: number) => {
     setSelectedQuestionIndex(index);
-    setCurrentView('questionForm');
+    setCurrentSubView('questionForm');
   };
 
   const handleDeleteQuestion = () => {
@@ -129,11 +316,10 @@ export default function App() {
       const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
       setQuestions(updatedQuestions);
       setSelectedQuestionIndex(null); // Clear selection
-      setCurrentView('quizEditor'); // Go back to the list
+      setCurrentSubView('quizEditorList'); // Go back to the list
     }
   };
 
-  // --- Handlers for Question Form (for editing a single question) ---
   const handleQuestionFormSave = (updatedQuestion: Question) => {
     if (selectedQuestionIndex !== null) {
       const updatedQuestions = questions.map((q, i) =>
@@ -141,103 +327,33 @@ export default function App() {
       );
       setQuestions(updatedQuestions);
     } else {
-        // If no question was selected, it's a new question from add
         setQuestions([...questions, updatedQuestion]);
     }
-    setSelectedQuestionIndex(null); // Clear selection
-    setCurrentView('quizEditor'); // Return to quiz editor list
+    setSelectedQuestionIndex(null);
+    setCurrentSubView('quizEditorList');
   };
 
   const handleQuestionFormCancel = () => {
     setSelectedQuestionIndex(null);
-    setCurrentView('quizEditor');
+    setCurrentSubView('quizEditorList');
   };
 
-  // --- Handlers for Quiz Player ---
-  const handleAnswerClick = (answerIndex: number) => {
-    // Check if it's the last question (index 5 for 6 questions total)
-    if (currentQuizQuestionIndex === 5 && questions.length === 6) {
-      // THIS IS THE REDIRECTION LOGIC FOR THE 6TH QUESTION
-      // Now, it redirects to a single link from LinkSettings, not per-answer
-      const redirectLink = affiliateLinks.finalRedirectLink || "https://example.com/default-final-redirect-link"; // Fallback link
-
-      console.log("Quiz complete! Redirecting to:", redirectLink);
-      alert('Quiz complete! Redirecting you to your personalized offer.'); // Replaced confirm with alert
-      window.location.href = redirectLink; // Perform redirection
-      return; // Exit function after redirection
-    }
-
-    // Move to the next question if not the last or if fewer than 6 questions
-    if (currentQuizQuestionIndex < questions.length - 1) {
-      setCurrentQuizQuestionIndex(currentQuizQuestionIndex + 1);
-    } else {
-      // This path is hit if quiz has < 6 questions and it's the last one
-      // Or if it's the 6th question but somehow the above if condition (currentQuizQuestionIndex === 5) was not met.
-      // We should ideally ensure `questions.length === 6` for final redirect path
-      alert('Quiz complete! No more questions. Returning to dashboard.');
-      setCurrentQuizQuestionIndex(0); // Reset for next play
-      setCurrentView('editor'); // Go back to editor dashboard
-    }
-  };
-
-
-  // --- Render content based on currentView ---
-  const renderContent = () => {
-    switch (currentView) {
-      case 'editor':
+  // --- Render Sub-views within FunnelEditor ---
+  const renderEditorContent = () => {
+    switch (currentSubView) {
+      case 'quizEditorList':
         return (
-          <div className="dashboard-container">
-            <h2><span role="img" aria-label="funnel">🥞</span> Funnel Editor</h2>
-            <p>Drag & drop components to build your marketing funnel</p>
-
-            <div
-              className="dashboard-card"
-              onClick={() => setCurrentView('quizEditor')}
-            >
-              <h3><span role="img" aria-label="quiz">📝</span> Interactive Quiz Builder</h3>
-              <p>Click here to manage your quiz questions</p>
-              <small>Supports single-choice, multiple-choice, text input, etc.</small>
-            </div>
-
-            <div
-              className="dashboard-card"
-              onClick={() => setCurrentView('linkSettings')}
-            >
-              <h3><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h3>
-              <p>Click here to configure the custom link for quiz redirection.</p>
-              <small>This link will be used when the quiz is completed.</small>
-            </div>
-
-            <div
-              className="dashboard-card"
-              onClick={() => setCurrentView('colorCustomizer')}
-            >
-              <h3><span role="img" aria-label="palette">🎨</span> Color Customization</h3>
-              <p>Click here to customize theme colors</p>
-              <small>Adjust button, background, and text colors</small>
-            </div>
-
-            <button className="back-button" onClick={() => setCurrentView('home')}>
-              <span role="img" aria-label="back">←</span> Back to Home
-            </button>
-          </div>
-        );
-
-      case 'quizEditor':
-        return (
-          <QuizEditor
+          <QuizEditorComponent
             questions={questions}
             onAddQuestion={handleAddQuestion}
             onEditQuestion={handleEditQuestion}
-            onBack={() => setCurrentView('editor')}
+            onBack={() => navigate('/')} // Back to Funnel Dashboard
           />
         );
-
       case 'questionForm':
         const questionToEdit = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
-        // isLastQuestion is no longer needed for special link inputs
         return (
-          <QuestionForm
+          <QuestionFormComponent
             question={questionToEdit}
             questionIndex={selectedQuestionIndex}
             onSave={handleQuestionFormSave}
@@ -245,74 +361,46 @@ export default function App() {
             onDelete={handleDeleteQuestion}
           />
         );
-
       case 'linkSettings':
         return (
-          <LinkSettings
-            affiliateLinks={affiliateLinks}
-            setAffiliateLinks={setAffiliateLinks}
-            onBack={() => setCurrentView('editor')}
+          <LinkSettingsComponent
+            finalRedirectLink={finalRedirectLink}
+            setFinalRedirectLink={setFinalRedirectLink}
+            tracking={tracking}
+            setTracking={setTracking}
+            conversionGoal={conversionGoal}
+            setConversionGoal={setConversionGoal}
+            onBack={() => setCurrentSubView('quizEditorList')}
           />
         );
-
       case 'colorCustomizer':
         return (
-          <ColorCustomizer
-            onBack={() => setCurrentView('editor')}
-          />
+          <ColorCustomizerComponent onBack={() => setCurrentSubView('quizEditorList')} />
         );
-
-      case 'quizPlay':
-        if (questions.length === 0) {
-          return (
-            <div className="quiz-player-container">
-                <h2>No Quiz Questions Configured!</h2>
-                <p>Please go back to the editor and add 6 questions first to play the full quiz.</p>
-                <button className="back-button" onClick={() => { setCurrentView('quizEditor'); setCurrentQuizQuestionIndex(0); }}>
-                    <span role="img" aria-label="back">←</span> Go to Quiz Editor
-                </button>
-            </div>
-          );
-        }
-        if (questions.length < 6) {
-          return (
-            <div className="quiz-player-container">
-                <h2>Quiz Not Ready</h2>
-                <p>Please add exactly 6 questions in the editor for the full quiz experience.</p>
-                <button className="back-button" onClick={() => { setCurrentView('quizEditor'); setCurrentQuizQuestionIndex(0); }}>
-                    <span role="img" aria-label="back">←</span> Go to Quiz Editor
-                </button>
-            </div>
-          );
-        }
-
-        const quizQuestion = questions[currentQuizQuestionIndex];
+      default:
         return (
-          <QuizPlayer
-            question={quizQuestion}
-            currentQuestionNumber={currentQuizQuestionIndex + 1}
-            totalQuestions={questions.length}
-            onAnswerClick={handleAnswerClick}
-            onBack={() => { setCurrentView('home'); setCurrentQuizQuestionIndex(0); }} // Reset quiz on exit
-          />
-        );
+          <div className="dashboard-container">
+            <h2><span role="img" aria-label="funnel">🥞</span> {funnelName} Editor</h2>
+            <p>Manage components for this funnel.</p>
 
-      default: // Home View
-        return (
-          <div className="home-container">
-            <div className="home-header">
-              <span role="img" aria-label="target">🎯</span>
-              <h1>Marketing Funnel Editor</h1>
+            <div className="dashboard-card" onClick={() => setCurrentSubView('quizEditorList')}>
+              <h3><span role="img" aria-label="quiz">📝</span> Interactive Quiz Builder</h3>
+              <p>Manage quiz questions for this funnel.</p>
             </div>
-            <p>Your visual funnel editor is ready!</p>
-            <div className="home-buttons">
-              <button className="home-button primary" onClick={handleStartClick}>
-                <span role="img" aria-label="rocket">🚀</span> Start Building
-              </button>
-              <button className="home-button secondary" onClick={handlePreviewClick}>
-                <span role="img" aria-label="eye">👁️</span> Preview Quiz
-              </button>
+
+            <div className="dashboard-card" onClick={() => setCurrentSubView('linkSettings')}>
+              <h3><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h3>
+              <p>Configure the custom link where users will be redirected.</p>
             </div>
+
+            <div className="dashboard-card" onClick={() => setCurrentSubView('colorCustomizer')}>
+              <h3><span role="img" aria-label="palette">🎨</span> Color Customization</h3>
+              <p>Customize theme colors for this funnel (not yet implemented).</p>
+            </div>
+
+            <button className="back-button" onClick={() => navigate('/')}>
+              <span role="img" aria-label="back">←</span> Back to All Funnels
+            </button>
           </div>
         );
     }
@@ -320,21 +408,130 @@ export default function App() {
 
   return (
     <div className="App">
-      {renderContent()}
+      {renderEditorContent()}
     </div>
   );
+};
+
+
+// --- QuizPlayer Component (for playing the quiz) ---
+interface QuizPlayerProps {
+  db: Firestore;
 }
 
-// --- Individual Components (defined within App.tsx for simplicity, can be moved to separate files) ---
+const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
+  const { funnelId } = useParams<{ funnelId: string }>();
+  const navigate = useNavigate();
 
-interface QuizEditorProps {
+  const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+
+  // Load specific funnel data for playing
+  useEffect(() => {
+    const getFunnelForPlay = async () => {
+      if (!funnelId) {
+        alert('No funnel ID provided!');
+        navigate('/');
+        return;
+      }
+      try {
+        const funnelDocRef = doc(db, 'funnels', funnelId);
+        const funnelDoc = await getDoc(funnelDocRef);
+        if (funnelDoc.exists()) {
+          const funnel = funnelDoc.data() as Funnel;
+          setFunnelData(funnel.data);
+        } else {
+          alert('Funnel not found! Please check the link.');
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Error loading funnel for play:", error);
+        alert("Failed to load quiz. Check console for details.");
+        navigate('/');
+      }
+    };
+    getFunnelForPlay();
+  }, [funnelId, db, navigate]);
+
+  const handleAnswerClick = (answerIndex: number) => {
+    if (!funnelData || funnelData.questions.length === 0) return;
+
+    // Check if it's the last question (index 5 for 6 questions total) AND we have exactly 6 questions
+    if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
+      const redirectLink = funnelData.finalRedirectLink || "https://example.com/default-final-redirect-link";
+
+      console.log("Quiz complete! Redirecting to:", redirectLink);
+      alert('Quiz complete! Redirecting you to your personalized offer.');
+      window.location.href = redirectLink;
+      return;
+    }
+
+    // Move to the next question if not the last
+    if (currentQuestionIndex < funnelData.questions.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      // This path is hit if quiz has < 6 questions and it's the last one,
+      // or if it's the 6th question but somehow the above condition was not met (shouldn't happen with proper setup)
+      alert('Quiz complete! No more questions. Returning to home.');
+      navigate('/'); // Go back to dashboard after completion
+    }
+  };
+
+  if (!funnelData) {
+    return (
+      <div className="quiz-player-container">
+        <h2>Loading Quiz...</h2>
+        <p>Please wait while your quiz loads.</p>
+      </div>
+    );
+  }
+
+  if (funnelData.questions.length === 0 || funnelData.questions.length < 6) {
+    return (
+      <div className="quiz-player-container">
+        <h2>Quiz Not Ready</h2>
+        <p>This funnel either has no questions or fewer than the required 6 questions. Please contact the funnel creator.</p>
+        <button className="back-button" onClick={() => navigate('/')}>
+          <span role="img" aria-label="back">←</span> Back to Home
+        </button>
+      </div>
+    );
+  }
+
+  const currentQuestion = funnelData.questions[currentQuestionIndex];
+
+  return (
+    <div className="quiz-player-container">
+      <h2><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
+      <div className="progress-bar-container">
+        <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%` }}></div>
+      </div>
+      <p className="question-counter">Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
+
+      <h3 className="quiz-question-title">{currentQuestion.title}</h3>
+
+      <div className="quiz-answers-container">
+        {currentQuestion.answers.map((answer) => (
+          <button key={answer.id} className="quiz-answer-button" onClick={() => handleAnswerClick(currentQuestion.answers.indexOf(answer))}>
+            {answer.text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
+// --- Re-usable UI Components (extracted from App for clarity) ---
+
+interface QuizEditorComponentProps {
   questions: Question[];
   onAddQuestion: () => void;
   onEditQuestion: (index: number) => void;
   onBack: () => void;
 }
 
-const QuizEditor: React.FC<QuizEditorProps> = ({ questions, onAddQuestion, onEditQuestion, onBack }) => {
+const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, onAddQuestion, onEditQuestion, onBack }) => {
   return (
     <div className="quiz-editor-container">
       <h2><span role="img" aria-label="quiz">📝</span> Quiz Question List</h2>
@@ -355,30 +552,29 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ questions, onAddQuestion, onEdi
       )}
 
       <button className="back-button" onClick={onBack}>
-        <span role="img" aria-label="back">←</span> Back to Editor Dashboard
+        <span role="img" aria-label="back">←</span> Back to Funnel Dashboard
       </button>
     </div>
   );
 };
 
-interface QuestionFormProps {
-  question?: Question; // undefined for new question
-  questionIndex: number | null; // index for current question, null for new
+interface QuestionFormComponentProps {
+  question?: Question;
+  questionIndex: number | null;
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
 }
 
-const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
+const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
   const [title, setTitle] = useState(question ? question.title : '');
-  // Initialize answers with 4 empty placeholders if new, or existing answers
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
       ? question.answers
       : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
 
-  useEffect(() => { // Update form fields if selected question changes
+  useEffect(() => {
     setTitle(question ? question.title : '');
     setAnswers(
       question && question.answers.length > 0
@@ -389,7 +585,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
 
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
-    if (!updatedAnswers[index]) { // Ensure the answer object exists
+    if (!updatedAnswers[index]) {
       updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' };
     }
     updatedAnswers[index].text = value;
@@ -401,7 +597,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
       alert('Question title cannot be empty!');
       return;
     }
-    const filteredAnswers = answers.filter(ans => ans.text.trim() !== ''); // Filter out empty answers
+    const filteredAnswers = answers.filter(ans => ans.text.trim() !== '');
     if (filteredAnswers.length === 0) {
         alert('Please provide at least one answer option.');
         return;
@@ -410,7 +606,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
     onSave({
       id: question?.id || Date.now().toString(),
       title,
-      type: 'single-choice', // Fixed type for now
+      type: 'single-choice',
       answers: filteredAnswers,
     });
   };
@@ -440,7 +636,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
       </div>
       <div className="answer-options-section">
         <p>Answer Options (Max 4):</p>
-        {Array.from({ length: 4 }).map((_, index) => ( // Always render 4 input fields for consistency
+        {Array.from({ length: 4 }).map((_, index) => (
           <div key={index} className="answer-input-group">
             <input
               type="text"
@@ -469,23 +665,24 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
 };
 
 
-interface LinkSettingsProps {
-    affiliateLinks: { finalRedirectLink: string; tracking: string; conversionGoal: string };
-    setAffiliateLinks: React.Dispatch<React.SetStateAction<{ finalRedirectLink: string; tracking: string; conversionGoal: string }>>;
+interface LinkSettingsComponentProps {
+    finalRedirectLink: string;
+    setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
+    tracking: string;
+    setTracking: React.Dispatch<React.SetStateAction<string>>;
+    conversionGoal: string;
+    setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
     onBack: () => void;
 }
 
-const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliateLinks, onBack }) => {
-    const [redirectLink, setRedirectLink] = useState(affiliateLinks.finalRedirectLink);
-    const [tracking, setTracking] = useState(affiliateLinks.tracking);
-    const [goal, setGoal] = useState(affiliateLinks.conversionGoal);
-
-    const handleSave = () => {
-        setAffiliateLinks({ finalRedirectLink: redirectLink, tracking, conversionGoal: goal });
-        alert('Link Settings Saved!');
-        onBack();
-    };
-
+const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
+    finalRedirectLink, setFinalRedirectLink,
+    tracking, setTracking,
+    conversionGoal, setConversionGoal,
+    onBack
+}) => {
+    // These states are managed by the parent FunnelEditor and passed down
+    // No local save button needed here as changes propagate up and are auto-saved
     return (
         <div className="link-settings-container">
             <h2><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h2>
@@ -494,8 +691,8 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
                 <label>Custom Final Redirect Link:</label>
                 <input
                     type="text"
-                    value={redirectLink}
-                    onChange={(e) => setRedirectLink(e.target.value)}
+                    value={finalRedirectLink}
+                    onChange={(e) => setFinalRedirectLink(e.target.value)}
                     placeholder="https://your-custom-product-page.com"
                 />
             </div>
@@ -510,15 +707,15 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
             </div>
             <div className="form-group">
                 <label>Conversion Goal:</label>
-                <select value={goal} onChange={(e) => setGoal(e.target.value)}>
+                <select value={conversionGoal} onChange={(e) => setConversionGoal(e.target.value)}>
                     <option>Product Purchase</option>
                     <option>Email Subscription</option>
                     <option>Free Trial</option>
                 </select>
             </div>
             <div className="form-actions">
-                <button className="save-button" onClick={handleSave}>
-                    <span role="img" aria-label="save">💾</span> Save Settings
+                <button className="save-button" onClick={() => alert('Settings applied! (Auto-saved)')}>
+                    <span role="img" aria-label="save">💾</span> Applied
                 </button>
                 <button className="cancel-button" onClick={onBack}>
                     <span role="img" aria-label="back">←</span> Back to Editor
@@ -528,16 +725,15 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
     );
 };
 
-interface ColorCustomizerProps {
+interface ColorCustomizerComponentProps {
     onBack: () => void;
 }
 
-const ColorCustomizer: React.FC<ColorCustomizerProps> = ({ onBack }) => {
-    // This component currently doesn't manage global colors, but lays out the UI.
-    // To implement, you would likely use React Context or CSS variables that JS can update.
+const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({ onBack }) => {
     return (
         <div className="color-customizer-container">
             <h2><span role="img" aria-label="palette">🎨</span> Color Customization</h2>
+            <p>Color customization for this specific funnel. (Functionality to apply not yet implemented)</p>
             <div className="form-group">
                 <label>Primary Color:</label>
                 <input type="color" defaultValue="#007bff" />
@@ -562,52 +758,6 @@ const ColorCustomizer: React.FC<ColorCustomizerProps> = ({ onBack }) => {
                     <span role="img" aria-label="back">←</span> Back to Editor
                 </button>
             </div>
-        </div>
-    );
-};
-
-
-interface QuizPlayerProps {
-    question: Question;
-    currentQuestionNumber: number;
-    totalQuestions: number;
-    onAnswerClick: (answerIndex: number) => void;
-    onBack: () => void;
-}
-
-const QuizPlayer: React.FC<QuizPlayerProps> = ({ question, currentQuestionNumber, totalQuestions, onAnswerClick, onBack }) => {
-    if (!question) {
-        return (
-            <div className="quiz-player-container">
-                <p>Loading question...</p>
-                <button className="back-button" onClick={onBack}>
-                    <span role="img" aria-label="back">←</span> Back
-                </button>
-            </div>
-        );
-    }
-
-    return (
-        <div className="quiz-player-container">
-            <h2><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
-            <div className="progress-bar-container">
-                <div className="progress-bar" style={{ width: `${(currentQuestionNumber / totalQuestions) * 100}%` }}></div>
-            </div>
-            <p className="question-counter">Question {currentQuestionNumber} / {totalQuestions}</p>
-
-            <h3 className="quiz-question-title">{question.title}</h3>
-
-            <div className="quiz-answers-container">
-                {question.answers.map((answer, index) => (
-                    <button key={answer.id || index} className="quiz-answer-button" onClick={() => onAnswerClick(index)}>
-                        {answer.text}
-                    </button>
-                ))}
-            </div>
-
-            <button className="back-button" onClick={onBack}>
-                <span role="img" aria-label="back">←</span> Back to Home
-            </button>
         </div>
     );
 };
