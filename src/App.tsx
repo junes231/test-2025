@@ -56,7 +56,7 @@ const defaultFunnelData: FunnelData = {
   tracking: '',
   conversionGoal: 'Product Purchase',
   primaryColor: '#007bff', // Default blue
-  buttonColor: '#28a745',  // Default green
+  buttonColor: '#28a745',  
   backgroundColor: '#f8f9fa', // Default light gray
   textColor: '#333333',    // Default dark text
 };
