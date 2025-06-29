@@ -1,45 +1,265 @@
 .App {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  padding: 20px;
+  background-color: #f4f7f6;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-/* 全局按钮样式 */
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+/* General Container Styling */
+.home-container, .dashboard-container, .quiz-editor-container, .question-form-container, .link-settings-container, .color-customizer-container, .quiz-player-container {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 600px;
+    width: 95%;
+    margin: 20px auto;
+    box-sizing: border-box;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+h1, h2, h3 {
+    color: #333;
+    margin-bottom: 20px;
 }
 
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+p {
+    color: #555;
+    margin-bottom: 10px;
 }
 
-.btn-secondary:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
+/* Home & Dashboard Buttons */
+.home-buttons, .form-actions {
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+    justify-content: center;
+    gap: 20px;
+    margin-top: 30px;
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .btn-primary, .btn-secondary {
-    padding: 10px 16px;
-    font-size: 14px;
-  }
+.home-button, .add-button, .save-button, .cancel-button, .delete-button, .quiz-answer-button, .back-button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    text-align: center;
+    text-decoration: none; /* For links styled as buttons */
+    box-sizing: border-box;
+    min-width: 150px; /* Ensure minimum width for buttons */
+    justify-content: center; /* Center content in button */
 }
 
+.home-button.primary, .save-button {
+    background-color: #007bff;
+    color: white;
+}
+.home-button.primary:hover, .save-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.home-button.secondary, .add-button {
+    background-color: #28a745;
+    color: white;
+}
+.home-button.secondary:hover, .add-button:hover {
+    background-color: #1e7e34;
+    transform: translateY(-2px);
+}
+
+.cancel-button, .back-button {
+    background-color: #6c757d;
+    color: white;
+}
+.cancel-button:hover, .back-button:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+.delete-button {
+    background-color: #dc3545;
+    color: white;
+}
+.delete-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+}
+
+/* Dashboard Cards */
+.dashboard-card {
+    border: 2px dashed #007bff; /* Default blue for quiz */
+    padding: 40px;
+    margin: 20px 0;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: #f8f9fa;
+    transition: all 0.3s ease;
+}
+.dashboard-card:hover {
+    background-color: #e2e6ea;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+.dashboard-card h3 {
+    margin-top: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    color: #333;
+}
+.dashboard-card small {
+    color: #666;
+}
+
+/* Specific Dashboard Card Colors */
+.dashboard-card:nth-child(1) { border-color: #007bff; } /* Quiz */
+.dashboard-card:nth-child(2) { border-color: #28a745; } /* Links */
+.dashboard-card:nth-child(3) { border-color: #dc3545; } /* Colors */
+
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+.form-group input[type="text"],
+.form-group input[type="color"],
+.form-group select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-top: 5px;
+}
+
+.answer-options-section input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+.answer-options-section p {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.question-index-display {
+    font-style: italic;
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.no-questions-message {
+    margin: 30px 0;
+    color: #888;
+    font-style: italic;
+}
+
+/* Quiz Player Specific */
+.quiz-player-container {
+    padding: 40px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 600px;
+    width: 95%;
+    margin: 20px auto;
+    box-sizing: border-box;
+}
+.quiz-question-title {
+    font-size: 1.8em;
+    margin-bottom: 30px;
+    color: #34495e;
+}
+.quiz-answers-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.quiz-answer-button {
+    background-color: #007bff;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: center;
+}
+.quiz-answer-button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.progress-bar-container {
+    width: 100%;
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    height: 10px;
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background-color: #2ecc71;
+    border-radius: 10px;
+    transition: width 0.3s ease-in-out;
+}
+.question-counter {
+    margin-bottom: 20px;
+    font-size: 0.9em;
+    color: #666;
+}
+
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .home-container, .dashboard-container, .quiz-editor-container, .question-form-container, .link-settings-container, .color-customizer-container, .quiz-player-container {
+        padding: 25px;
+    }
+    h1 {
+        font-size: 1.8em;
+    }
+    h2 {
+        font-size: 1.5em;
+    }
+    h3 {
+        font-size: 1.2em;
+    }
+    .home-button, .add-button, .save-button, .cancel-button, .delete-button, .quiz-answer-button, .back-button {
+        padding: 10px 15px;
+        font-size: 14px;
+        min-width: unset;
+    }
+    .home-buttons, .form-actions {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .dashboard-card {
+        padding: 30px;
+    }
+}
   
