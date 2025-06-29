@@ -12,9 +12,8 @@ import {
   where,
   getDoc
 } from 'firebase/firestore';
-import './App.css'; // Make sure you have this CSS file for styling
+import './App.css';
 
-// Define TypeScript interfaces
 interface Answer {
   id: string;
   text: string;
@@ -56,7 +55,7 @@ const defaultFunnelData: FunnelData = {
   tracking: '',
   conversionGoal: 'Product Purchase',
   primaryColor: '#007bff', // Default blue
-  buttonColor: '#28a745',  
+  buttonColor: '#28a745',  // Default green
   backgroundColor: '#f8f9fa', // Default light gray
   textColor: '#333333',    // Default dark text
 };
@@ -461,14 +460,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   );
 }
 
-// QuizPlayer Component (for playing the quiz)
-interface QuizPlayerProps {
-  db: Firestore;
-}
-
-
-
-// QuizPlayer Component (for playing the quiz)
 interface QuizPlayerProps {
   db: Firestore;
 }
@@ -483,7 +474,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [isAnimating, setIsAnimating] = useState(false);
 
 
-  // Load specific funnel data for playing
   useEffect(() => {
     const getFunnelForPlay = async () => {
       if (!funnelId) {
@@ -511,27 +501,22 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   }, [funnelId, db, navigate]);
 
   const handleAnswerClick = (answerIndex: number) => {
-    if (isAnimating) return; // Prevent clicks during animation
+    if (isAnimating) return;
 
-    setIsAnimating(true); // Start animation
-    setClickedAnswerIndex(answerIndex); // Highlight clicked button
+    setIsAnimating(true);
+    setClickedAnswerIndex(answerIndex);
 
     setTimeout(() => {
-      // Animation/Highlight duration
       setIsAnimating(false);
-      setClickedAnswerIndex(null); // Remove highlight
+      setClickedAnswerIndex(null);
 
       if (!funnelData || funnelData.questions.length === 0) return;
 
-      // Check if it's the last question (index 5 for 6 questions total) AND we have exactly 6 questions
       if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
         let redirectLink = funnelData.finalRedirectLink || "https://example.com/default-final-redirect-link";
 
-        // NEW LOGIC: Attach tracking parameters if available
         if (funnelData.tracking && funnelData.tracking.trim() !== '') {
-          // Check if the link already has query parameters
           const hasQueryParams = redirectLink.includes('?');
-          // Append tracking parameters, adding '?' or '&' as needed
           redirectLink = `${redirectLink}${hasQueryParams ? '&' : '?'}${funnelData.tracking.trim()}`;
         }
 
@@ -541,75 +526,13 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         return;
       }
 
-      // Move to the next question if not the last
       if (currentQuestionIndex < funnelData.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
         alert('Quiz complete! No more questions. Returning to home.');
-        navigate('/'); // Go back to dashboard after completion
-      }
-    }, 500); // 500ms delay for animation
-  };
-
-  
-};
-
-
-
-      }
-      try {
-        const funnelDocRef = doc(db, 'funnels', funnelId);
-        const funnelDoc = await getDoc(funnelDocRef);
-        if (funnelDoc.exists()) {
-          const funnel = funnelDoc.data() as Funnel;
-          // Load data, merging with defaults to ensure all fields exist
-          setFunnelData({ ...defaultFunnelData, ...funnel.data });
-        } else {
-          alert('Funnel not found! Please check the link.');
-          navigate('/');
-        }
-      } catch (error) {
-        console.error("Error loading funnel for play:", error);
-        alert("Failed to load quiz. Check console for details.");
         navigate('/');
       }
-    };
-    getFunnelForPlay();
-  }, [funnelId, db, navigate]);
-
-  const handleAnswerClick = (answerIndex: number) => {
-    if (isAnimating) return; // Prevent clicks during animation
-
-    setIsAnimating(true); // Start animation
-    setClickedAnswerIndex(answerIndex); // Highlight clicked button
-
-    setTimeout(() => {
-      // Animation/Highlight duration
-      setIsAnimating(false);
-      setClickedAnswerIndex(null); // Remove highlight
-
-      if (!funnelData || funnelData.questions.length === 0) return;
-
-      // Check if it's the last question (index 5 for 6 questions total) AND we have exactly 6 questions
-      if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
-        const redirectLink = funnelData.finalRedirectLink || "https://example.com/default-final-redirect-link";
-
-        console.log("Quiz complete! Redirecting to:", redirectLink);
-        alert('Quiz complete! Redirecting you to your personalized offer.');
-        window.location.href = redirectLink;
-        return;
-      }
-
-      // Move to the next question if not the last
-      if (currentQuestionIndex < funnelData.questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        // This path is hit if quiz has < 6 questions and it's the last one,
-        // or if it's the 6th question but somehow the above condition was not met (shouldn't happen with proper setup)
-        alert('Quiz complete! No more questions. Returning to home.');
-        navigate('/'); // Go back to dashboard after completion
-      }
-    }, 500); // 500ms delay for animation
+    }, 500);
   };
 
   if (!funnelData) {
@@ -635,24 +558,21 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
   const currentQuestion = funnelData.questions[currentQuestionIndex];
 
-  // Apply custom colors using CSS variables
-  // The outer div (quiz-player-container) will apply the background and text color for the whole player
-  // Individual elements like buttons will use these vars or specific overrides
   const quizPlayerContainerStyle = {
     '--primary-color': funnelData.primaryColor,
     '--button-color': funnelData.buttonColor,
     '--background-color': funnelData.backgroundColor,
     '--text-color': funnelData.textColor,
-    backgroundColor: funnelData.backgroundColor, // Apply background directly
-    color: funnelData.textColor, // Apply text color directly
-  } as React.CSSProperties; // Type assertion for custom properties
+    backgroundColor: funnelData.backgroundColor,
+    color: funnelData.textColor,
+  } as React.CSSProperties;
 
 
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
       <h2 style={{color: 'var(--text-color)'}}><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
-      <div className="progress-bar-container" style={{backgroundColor: 'var(--button-color)'}}> {/* Example: progress bar track color */}
-        <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div> {/* Example: progress bar fill color */}
+      <div className="progress-bar-container" style={{backgroundColor: 'var(--button-color)'}}>
+        <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div>
       </div>
       <p className="question-counter" style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
 
@@ -662,13 +582,13 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         {currentQuestion.answers.map((answer, index) => (
           <button
             key={answer.id}
-            className={`quiz-answer-button ${clickedAnswerIndex === index ? 'selected-answer animating' : ''}`} // Apply classes
+            className={`quiz-answer-button ${clickedAnswerIndex === index ? 'selected-answer animating' : ''}`}
             onClick={() => handleAnswerClick(index)}
-            disabled={isAnimating} // Disable clicks during animation
+            disabled={isAnimating}
             style={{
               backgroundColor: 'var(--button-color)',
-              color: 'var(--text-color)', // Use text color for button text
-              borderColor: 'var(--primary-color)' // Optional: add border based on primary
+              color: 'var(--text-color)',
+              borderColor: 'var(--primary-color)'
             }}
           >
             {answer.text}
@@ -684,9 +604,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     </div>
   );
 };
-
-
-// --- Re-usable UI Components (extracted from App for clarity) ---
 
 interface QuizEditorComponentProps {
   questions: Question[];
