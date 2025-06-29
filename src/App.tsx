@@ -32,6 +32,11 @@ interface FunnelData {
   finalRedirectLink: string;
   tracking: string;
   conversionGoal: string;
+  // NEW: Color fields for customization
+  primaryColor: string;
+  buttonColor: string;
+  backgroundColor: string;
+  textColor: string;
 }
 
 interface Funnel {
@@ -45,6 +50,19 @@ interface AppProps {
   db: Firestore;
 }
 
+// Default values for funnel data, including colors
+const defaultFunnelData: FunnelData = {
+  questions: [],
+  finalRedirectLink: '',
+  tracking: '',
+  conversionGoal: 'Product Purchase',
+  primaryColor: '#007bff', // Default blue
+  buttonColor: '#28a745',  // Default green
+  backgroundColor: '#f8f9fa', // Default light gray
+  textColor: '#333333',    // Default dark text
+};
+
+
 export default function App({ db }: AppProps) {
   const navigate = useNavigate(); // Hook for programmatic navigation
 
@@ -55,10 +73,16 @@ export default function App({ db }: AppProps) {
   const getFunnels = useCallback(async () => {
     try {
       const data = await getDocs(funnelsCollectionRef);
-      const loadedFunnels = data.docs.map((doc) => ({
-        ...(doc.data() as Funnel), // Cast to Funnel interface
-        id: doc.id, // Ensure id is from doc.id
-      }));
+      const loadedFunnels = data.docs.map((doc) => {
+        const docData = doc.data() as Partial<Funnel>; // Use Partial for initial cast
+        // Ensure that 'data' field has all properties from defaultFunnelData
+        const funnelWithDefaultData: Funnel = {
+          ...(docData as Funnel), // Cast again for rest of properties
+          id: doc.id,
+          data: { ...defaultFunnelData, ...docData.data }, // Merge with defaults
+        };
+        return funnelWithDefaultData;
+      });
 
       // --- Migration Logic from old localStorage (run once) ---
       const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
@@ -71,13 +95,14 @@ export default function App({ db }: AppProps) {
 
         if (parsedOldQuestions.length > 0) {
           console.log("Migrating old local storage data to Firestore...");
-          const newFunnel: FunnelData = {
+          const migratedFunnelData: FunnelData = {
+            ...defaultFunnelData, // Start with defaults
             questions: parsedOldQuestions,
             finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
             tracking: parsedOldLinks.tracking || '',
             conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
           };
-          await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: newFunnel });
+          await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: migratedFunnelData });
           localStorage.setItem('hasMigratedToFirestore', 'true'); // Mark as migrated
           alert('Old quiz data migrated to Firestore! Please refresh.');
           window.location.reload(); // Force reload to see new data
@@ -97,11 +122,11 @@ export default function App({ db }: AppProps) {
   }, [getFunnels]);
 
   // --- Funnel Management Functions ---
-  const createFunnel = async (name: string, initialData?: FunnelData) => {
+  const createFunnel = async (name: string) => {
     try {
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
-        data: initialData || { questions: [], finalRedirectLink: '', tracking: '', conversionGoal: 'Product Purchase' },
+        data: defaultFunnelData, // Use default data for new funnels
       });
       alert(`Funnel "${name}" created!`);
       getFunnels(); // Refresh list
@@ -132,7 +157,7 @@ export default function App({ db }: AppProps) {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
       getFunnels(); // Refresh list to reflect changes
-      // alert('Funnel data saved!');
+      // alert('Funnel data saved!'); // Removed alert to prevent annoyance on auto-save
     } catch (error) {
       console.error("Error updating funnel:", error);
       alert("Failed to save funnel data. Check console for details.");
@@ -155,7 +180,7 @@ export default function App({ db }: AppProps) {
 // FunnelDashboard Component
 interface FunnelDashboardProps {
   funnels: Funnel[];
-  createFunnel: (name: string, initialData?: FunnelData) => Promise<void>;
+  createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
@@ -242,9 +267,14 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
   const [tracking, setTracking] = useState('');
   const [conversionGoal, setConversionGoal] = useState('Product Purchase');
+  // NEW: States for colors
+  const [primaryColor, setPrimaryColor] = useState(defaultFunnelData.primaryColor);
+  const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
+  const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
+  const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [currentSubView, setCurrentSubView] = useState('quizEditorList'); // 'quizEditorList', 'questionForm', 'linkSettings', 'colorCustomizer'
+  const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard'); // Changed default subview name
 
   // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
@@ -255,10 +285,16 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       if (funnelDoc.exists()) {
         const funnel = funnelDoc.data() as Funnel;
         setFunnelName(funnel.name);
-        setQuestions(funnel.data.questions || []);
-        setFinalRedirectLink(funnel.data.finalRedirectLink || '');
-        setTracking(funnel.data.tracking || '');
-        setConversionGoal(funnel.data.conversionGoal || 'Product Purchase');
+        // Load data, merging with defaults to ensure all fields exist
+        setQuestions(funnel.data.questions || defaultFunnelData.questions);
+        setFinalRedirectLink(funnel.data.finalRedirectLink || defaultFunnelData.finalRedirectLink);
+        setTracking(funnel.data.tracking || defaultFunnelData.tracking);
+        setConversionGoal(funnel.data.conversionGoal || defaultFunnelData.conversionGoal);
+        // Load colors
+        setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
+        setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
+        setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
+        setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
       } else {
         alert('Funnel not found!');
         navigate('/'); // Go back to dashboard
@@ -276,9 +312,15 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       finalRedirectLink,
       tracking,
       conversionGoal,
+      // NEW: Include colors in saved data
+      primaryColor,
+      buttonColor,
+      backgroundColor,
+      textColor,
     };
     updateFunnelData(funnelId, newData);
-  }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal, updateFunnelData]);
+  }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
+      primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
 
   // Use useEffect to save changes automatically, with a debounce for performance
   useEffect(() => {
@@ -286,7 +328,8 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       saveFunnelToFirestore();
     }, 1000); // Save 1 second after last change
     return () => clearTimeout(handler);
-  }, [questions, finalRedirectLink, tracking, conversionGoal, saveFunnelToFirestore]);
+  }, [questions, finalRedirectLink, tracking, conversionGoal,
+      primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
 
 
   // --- Quiz Question Management in Editor ---
@@ -347,7 +390,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             questions={questions}
             onAddQuestion={handleAddQuestion}
             onEditQuestion={handleEditQuestion}
-            onBack={() => navigate('/')} // Back to Funnel Dashboard
+            onBack={() => setCurrentSubView('mainEditorDashboard')} // Back to Funnel Dashboard
           />
         );
       case 'questionForm':
@@ -370,14 +413,20 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             setTracking={setTracking}
             conversionGoal={conversionGoal}
             setConversionGoal={setConversionGoal}
-            onBack={() => setCurrentSubView('quizEditorList')}
+            onBack={() => setCurrentSubView('mainEditorDashboard')}
           />
         );
       case 'colorCustomizer':
         return (
-          <ColorCustomizerComponent onBack={() => setCurrentSubView('quizEditorList')} />
+          <ColorCustomizerComponent
+            primaryColor={primaryColor} setPrimaryColor={setPrimaryColor}
+            buttonColor={buttonColor} setButtonColor={setButtonColor}
+            backgroundColor={backgroundColor} setBackgroundColor={setBackgroundColor}
+            textColor={textColor} setTextColor={setTextColor}
+            onBack={() => setCurrentSubView('mainEditorDashboard')}
+          />
         );
-      default:
+      default: // mainEditorDashboard
         return (
           <div className="dashboard-container">
             <h2><span role="img" aria-label="funnel">🥞</span> {funnelName} Editor</h2>
@@ -395,7 +444,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
             <div className="dashboard-card" onClick={() => setCurrentSubView('colorCustomizer')}>
               <h3><span role="img" aria-label="palette">🎨</span> Color Customization</h3>
-              <p>Customize theme colors for this funnel (not yet implemented).</p>
+              <p>Customize theme colors for this funnel.</p>
             </div>
 
             <button className="back-button" onClick={() => navigate('/')}>
@@ -439,7 +488,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         const funnelDoc = await getDoc(funnelDocRef);
         if (funnelDoc.exists()) {
           const funnel = funnelDoc.data() as Funnel;
-          setFunnelData(funnel.data);
+          // Load data, merging with defaults to ensure all fields exist
+          setFunnelData({ ...defaultFunnelData, ...funnel.data });
         } else {
           alert('Funnel not found! Please check the link.');
           navigate('/');
@@ -500,23 +550,47 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
   const currentQuestion = funnelData.questions[currentQuestionIndex];
 
-  return (
-    <div className="quiz-player-container">
-      <h2><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
-      <div className="progress-bar-container">
-        <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%` }}></div>
-      </div>
-      <p className="question-counter">Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
+  // Apply custom colors using CSS variables
+  const quizPlayerStyle = {
+    '--primary-color': funnelData.primaryColor,
+    '--button-color': funnelData.buttonColor,
+    '--background-color': funnelData.backgroundColor,
+    '--text-color': funnelData.textColor,
+  } as React.CSSProperties; // Type assertion for custom properties
 
-      <h3 className="quiz-question-title">{currentQuestion.title}</h3>
+
+  return (
+    <div className="quiz-player-container" style={quizPlayerStyle}>
+      <h2 style={{color: 'var(--text-color)'}}><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
+      <div className="progress-bar-container" style={{backgroundColor: 'var(--button-color)'}}> {/* Example: progress bar track color */}
+        <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div> {/* Example: progress bar fill color */}
+      </div>
+      <p className="question-counter" style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
+
+      <h3 className="quiz-question-title" style={{color: 'var(--text-color)'}}>{currentQuestion.title}</h3>
 
       <div className="quiz-answers-container">
         {currentQuestion.answers.map((answer) => (
-          <button key={answer.id} className="quiz-answer-button" onClick={() => handleAnswerClick(currentQuestion.answers.indexOf(answer))}>
+          <button
+            key={answer.id}
+            className="quiz-answer-button"
+            onClick={() => handleAnswerClick(currentQuestion.answers.indexOf(answer))}
+            style={{
+              backgroundColor: 'var(--button-color)',
+              color: 'var(--text-color)', // Use text color for button text
+              borderColor: 'var(--primary-color)' // Optional: add border based on primary
+            }}
+          >
             {answer.text}
           </button>
         ))}
       </div>
+      <button className="back-button" onClick={() => navigate('/')} style={{
+        backgroundColor: 'var(--button-color)',
+        color: 'var(--text-color)',
+      }}>
+        <span role="img" aria-label="back">←</span> Back to Home
+      </button>
     </div>
   );
 };
@@ -681,8 +755,6 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
     conversionGoal, setConversionGoal,
     onBack
 }) => {
-    // These states are managed by the parent FunnelEditor and passed down
-    // No local save button needed here as changes propagate up and are auto-saved
     return (
         <div className="link-settings-container">
             <h2><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h2>
@@ -726,33 +798,47 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
 };
 
 interface ColorCustomizerComponentProps {
+    primaryColor: string;
+    setPrimaryColor: React.Dispatch<React.SetStateAction<string>>;
+    buttonColor: string;
+    setButtonColor: React.Dispatch<React.SetStateAction<string>>;
+    backgroundColor: string;
+    setBackgroundColor: React.Dispatch<React.SetStateAction<string>>;
+    textColor: string;
+    setTextColor: React.Dispatch<React.SetStateAction<string>>;
     onBack: () => void;
 }
 
-const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({ onBack }) => {
+const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
+    primaryColor, setPrimaryColor,
+    buttonColor, setButtonColor,
+    backgroundColor, setBackgroundColor,
+    textColor, setTextColor,
+    onBack
+}) => {
     return (
         <div className="color-customizer-container">
             <h2><span role="img" aria-label="palette">🎨</span> Color Customization</h2>
-            <p>Color customization for this specific funnel. (Functionality to apply not yet implemented)</p>
+            <p>Customize theme colors for this funnel. (Changes are auto-saved).</p>
             <div className="form-group">
                 <label>Primary Color:</label>
-                <input type="color" defaultValue="#007bff" />
+                <input type="color" value={primaryColor} onChange={(e) => setPrimaryColor(e.target.value)} />
             </div>
             <div className="form-group">
                 <label>Button Color:</label>
-                <input type="color" defaultValue="#28a745" />
+                <input type="color" value={buttonColor} onChange={(e) => setButtonColor(e.target.value)} />
             </div>
             <div className="form-group">
                 <label>Background Color:</label>
-                <input type="color" defaultValue="#f8f9fa" />
+                <input type="color" value={backgroundColor} onChange={(e) => setBackgroundColor(e.target.value)} />
             </div>
             <div className="form-group">
                 <label>Text Color:</label>
-                <input type="color" defaultValue="#333333" />
+                <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
             </div>
             <div className="form-actions">
-                <button className="save-button" onClick={() => { alert('Color Theme Saved! (Functionality to apply not yet implemented)'); onBack(); }}>
-                    <span role="img" aria-label="save">💾</span> Save Theme
+                <button className="save-button" onClick={() => alert('Color settings applied! (Auto-saved)')}>
+                    <span role="img" aria-label="save">💾</span> Applied
                 </button>
                 <button className="cancel-button" onClick={onBack}>
                     <span role="img" aria-label="back">←</span> Back to Editor
