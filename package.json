@@ -1,7 +1,7 @@
 {
   "name": "funnel-editor",
   "version": "1.0.0",
-  "description": "A/B Testing Multi-step Funnel Editor with React + TypeScript",
+  "description": "Marketing Funnel Editor with React + TypeScript",
   "private": true,
   "homepage": "https://junes231.github.io/funnel-editor",
   "scripts": {
@@ -15,13 +15,16 @@
     "react-dom": "^18.0.0",
     "react-scripts": "5.0.1",
     "typescript": "^4.9.5",
-    "react-router-dom": "6.8.1",
+    "react-router-dom": "^6.22.0",  // 更新到最新版本
+    "firebase": "^10.12.3",        // <--- 新增的 Firebase 依赖
     "ajv": "6.12.6",
     "ajv-keywords": "3.5.2"
   },
   "devDependencies": {
     "gh-pages": "^6.0.0",
     "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0"
+    "@types/react-dom": "^18.0.0",
+    "@types/react-router-dom": "^6.22.0" // <--- 重新添加并更新类型定义
   }
 }
+ 
