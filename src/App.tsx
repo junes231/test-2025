@@ -5,7 +5,7 @@ import './App.css'; // Make sure you have this CSS file for basic styling
 interface Answer {
   id: string; // Unique ID for the answer option
   text: string; // The text of the answer
-  affiliateLink?: string; // Optional: specific link for this answer, especially for the last question
+  affiliateLink?: string; // NEW: Optional affiliate link for this specific answer
 }
 
 interface Question {
@@ -19,7 +19,12 @@ interface Question {
 const loadQuestionsFromLocalStorage = (): Question[] => {
   try {
     const storedQuestions = localStorage.getItem('quizQuestions');
-    return storedQuestions ? JSON.parse(storedQuestions) : [];
+    // Ensure all answers have an ID for React keys, and affiliateLink is handled
+    const parsedQuestions: Question[] = storedQuestions ? JSON.parse(storedQuestions) : [];
+    return parsedQuestions.map(q => ({
+      ...q,
+      answers: q.answers.map(a => ({ ...a, id: a.id || Date.now().toString() + Math.random().toString() }))
+    }));
   } catch (error) {
     console.error("Failed to load questions from local storage:", error);
     return [];
@@ -35,7 +40,7 @@ const saveQuestionsToLocalStorage = (questions: Question[]) => {
   }
 };
 
-// Helper to load affiliate links from local storage
+// Helper to load affiliate links from local storage (for fallback/general settings)
 const loadAffiliateLinksFromLocalStorage = () => {
   try {
     const storedLinks = localStorage.getItem('affiliateLinks');
@@ -83,7 +88,9 @@ export default function App() {
   };
 
   const handlePreviewClick = () => {
-    setCurrentView('quizPlay'); // Preview now plays the quiz
+    // Reset quiz state before playing
+    setCurrentQuizQuestionIndex(0);
+    setCurrentView('quizPlay');
   };
 
   // --- Handlers for Quiz Editor ---
@@ -146,25 +153,29 @@ export default function App() {
   const handleAnswerClick = (answerIndex: number) => {
     const currentQuestion = questions[currentQuizQuestionIndex];
 
-    // Check if it's the last question (index 5 for 6 questions)
-    if (currentQuizQuestionIndex === questions.length - 1 && questions.length === 6) {
-      // Logic for redirection after the last question
+    // Check if it's the last question (index 5 for 6 questions total)
+    if (currentQuizQuestionIndex === 5 && questions.length === 6) {
+      // THIS IS THE REDIRECTION LOGIC FOR THE 6TH QUESTION
       const finalAnswer = currentQuestion.answers[answerIndex];
+      // Prioritize the link directly on the answer, then fallbacks
       const redirectLink = finalAnswer.affiliateLink || affiliateLinks.clickbank || affiliateLinks.amazon || "https://example.com/default-affiliate-link"; // Fallback link
+
+      console.log("Quiz complete! Redirecting to:", redirectLink);
       alert('Quiz complete! Redirecting you to your personalized offer.'); // Replaced confirm with alert
-      window.location.href = redirectLink;
-      return;
+      window.location.href = redirectLink; // Perform redirection
+      return; // Exit function after redirection
     }
 
-    // Move to the next question
+    // Move to the next question if not the last or if fewer than 6 questions
     if (currentQuizQuestionIndex < questions.length - 1) {
       setCurrentQuizQuestionIndex(currentQuizQuestionIndex + 1);
     } else {
-      // This case handles if there are less than 6 questions, and it's the last one
-      // but not the "6th question"
-      alert('Quiz complete! No further questions. Returning to editor.');
+      // This path is hit if quiz has < 6 questions and it's the last one
+      // Or if it's the 6th question but somehow the above if condition (currentQuizQuestionIndex === 5) was not met.
+      // We should ideally ensure `questions.length === 6` for final redirect path
+      alert('Quiz complete! No more questions. Returning to dashboard.');
       setCurrentQuizQuestionIndex(0); // Reset for next play
-      setCurrentView('editor'); // Or another appropriate view
+      setCurrentView('editor'); // Go back to editor dashboard
     }
   };
 
@@ -192,8 +203,8 @@ export default function App() {
               onClick={() => setCurrentView('linkSettings')}
             >
               <h3><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h3>
-              <p>Click here to configure your affiliate links</p>
-              <small>Configure ClickBank, Amazon, and other affiliate links</small>
+              <p>Click here to configure your general affiliate links (used as fallback).</p>
+              <small>Note: Final quiz redirection links are set per-answer on the 6th question.</small>
             </div>
 
             <div
@@ -222,11 +233,13 @@ export default function App() {
         );
 
       case 'questionForm':
-        const currentQuestion = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
+        const questionToEdit = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
+        const isLastQuestion = selectedQuestionIndex === 5; // Check if it's the 6th question (index 5)
         return (
           <QuestionForm
-            question={currentQuestion}
-            questionIndex={selectedQuestionIndex} // Pass index to show "Question 1 of 6"
+            question={questionToEdit}
+            questionIndex={selectedQuestionIndex}
+            isLastQuestion={isLastQuestion} // Pass this prop
             onSave={handleQuestionFormSave}
             onCancel={handleQuestionFormCancel}
             onDelete={handleDeleteQuestion}
@@ -254,13 +267,25 @@ export default function App() {
           return (
             <div className="quiz-player-container">
                 <h2>No Quiz Questions Configured!</h2>
-                <p>Please go back to the editor and add some questions first.</p>
+                <p>Please go back to the editor and add 6 questions first to play the full quiz.</p>
                 <button className="back-button" onClick={() => { setCurrentView('quizEditor'); setCurrentQuizQuestionIndex(0); }}>
                     <span role="img" aria-label="back">←</span> Go to Quiz Editor
                 </button>
             </div>
           );
         }
+        if (questions.length < 6) {
+          return (
+            <div className="quiz-player-container">
+                <h2>Quiz Not Ready</h2>
+                <p>Please add exactly 6 questions in the editor for the full quiz experience.</p>
+                <button className="back-button" onClick={() => { setCurrentView('quizEditor'); setCurrentQuizQuestionIndex(0); }}>
+                    <span role="img" aria-label="back">←</span> Go to Quiz Editor
+                </button>
+            </div>
+          );
+        }
+
         const quizQuestion = questions[currentQuizQuestionIndex];
         return (
           <QuizPlayer
@@ -339,23 +364,45 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ questions, onAddQuestion, onEdi
 interface QuestionFormProps {
   question?: Question; // undefined for new question
   questionIndex: number | null; // index for current question, null for new
+  isLastQuestion: boolean; // NEW: Indicates if this is the 6th question
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
 }
 
-const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
+const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, isLastQuestion, onSave, onCancel, onDelete }) => {
   const [title, setTitle] = useState(question ? question.title : '');
-  const [answers, setAnswers] = useState<Answer[]>(question ? question.answers : Array(4).fill(null).map((_, i) => ({ id: `option-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))); // Initialize with 4 empty options
+  // Initialize answers with 4 empty placeholders if new, or existing answers
+  const [answers, setAnswers] = useState<Answer[]>(
+    question && question.answers.length > 0
+      ? question.answers
+      : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}`, affiliateLink: '' }))
+  );
 
   useEffect(() => { // Update form fields if selected question changes
     setTitle(question ? question.title : '');
-    setAnswers(question ? question.answers : Array(4).fill(null).map((_, i) => ({ id: `option-${i}`, text: `Option ${String.fromCharCode(65 + i)}` })));
+    setAnswers(
+      question && question.answers.length > 0
+        ? question.answers
+        : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}`, affiliateLink: '' }))
+    );
   }, [question]);
 
-  const handleAnswerChange = (index: number, value: string) => {
+  const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
-    updatedAnswers[index] = { ...updatedAnswers[index], text: value, id: updatedAnswers[index]?.id || `option-${index}` }; // Ensure ID is present
+    if (!updatedAnswers[index]) { // Ensure the answer object exists
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '', affiliateLink: '' };
+    }
+    updatedAnswers[index].text = value;
+    setAnswers(updatedAnswers);
+  };
+
+  const handleAffiliateLinkChange = (index: number, value: string) => {
+    const updatedAnswers = [...answers];
+    if (!updatedAnswers[index]) { // Ensure the answer object exists
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '', affiliateLink: '' };
+    }
+    updatedAnswers[index].affiliateLink = value;
     setAnswers(updatedAnswers);
   };
 
@@ -369,6 +416,16 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
         alert('Please provide at least one answer option.');
         return;
     }
+    // For the last question, ensure affiliate links are set for provided answers
+    if (isLastQuestion) {
+        for (const ans of filteredAnswers) {
+            if (!ans.affiliateLink || ans.affiliateLink.trim() === '') {
+                alert(`Please set an affiliate link for all answers of Question ${questionIndex !== null ? questionIndex + 1 : ''}.`);
+                return;
+            }
+        }
+    }
+
     onSave({
       id: question?.id || Date.now().toString(),
       title,
@@ -381,7 +438,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
     <div className="question-form-container">
       <h2><span role="img" aria-label="edit">📝</span> Quiz Question Editor</h2>
       <p className="question-index-display">
-        {questionIndex !== null ? `Editing Question ${questionIndex + 1}` : 'Adding New Question'}
+        {questionIndex !== null ? `Editing Question ${questionIndex + 1} of 6` : 'Adding New Question'}
       </p>
       <div className="form-group">
         <label>Question Title:</label>
@@ -401,15 +458,25 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
         </select>
       </div>
       <div className="answer-options-section">
-        <p>Answer Options:</p>
-        {answers.map((ans, index) => (
-          <input
-            key={index} // Use index as key if IDs are not stable until save
-            type="text"
-            value={ans.text}
-            onChange={(e) => handleAnswerChange(index, e.target.value)}
-            placeholder={`Option ${String.fromCharCode(65 + index)}`}
-          />
+        <p>Answer Options (Max 4):</p>
+        {Array.from({ length: 4 }).map((_, index) => ( // Always render 4 input fields for consistency
+          <div key={index} className="answer-input-group">
+            <input
+              type="text"
+              value={answers[index]?.text || ''}
+              onChange={(e) => handleAnswerTextChange(index, e.target.value)}
+              placeholder={`Option ${String.fromCharCode(65 + index)}`}
+            />
+            {isLastQuestion && ( // ONLY show affiliate link input for the last question
+              <input
+                type="text"
+                value={answers[index]?.affiliateLink || ''}
+                onChange={(e) => handleAffiliateLinkChange(index, e.target.value)}
+                placeholder={`Affiliate Link for Option ${String.fromCharCode(65 + index)}`}
+                className="affiliate-link-input"
+              />
+            )}
+          </div>
         ))}
       </div>
       <div className="form-actions">
@@ -451,8 +518,9 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
     return (
         <div className="link-settings-container">
             <h2><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h2>
+            <p>These links are used as fallback if specific links are not set for the 6th question's answers.</p>
             <div className="form-group">
-                <label>ClickBank Link:</label>
+                <label>ClickBank Link (Fallback):</label>
                 <input
                     type="text"
                     value={cbLink}
@@ -461,7 +529,7 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
                 />
             </div>
             <div className="form-group">
-                <label>Amazon Affiliate Link:</label>
+                <label>Amazon Affiliate Link (Fallback):</label>
                 <input
                     type="text"
                     value={amzLink}
