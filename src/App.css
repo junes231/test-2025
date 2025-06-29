@@ -397,3 +397,76 @@ p {
         justify-content: space-around; /* Distribute buttons */
     }
 }
+/* --- NEW CSS for Dynamic Button Effects --- */
+
+@keyframes pulse-scale {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    50% {
+        transform: scale(1.03); /* Slightly larger */
+        box-shadow: 0 0 20px rgba(var(--primary-color-rgb, 0, 123, 255), 0.7); /* Glow effect */
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+}
+
+.quiz-answer-button.animating {
+    animation: pulse-scale 0.5s ease-in-out forwards; /* 0.5s duration */
+}
+
+.quiz-answer-button.selected-answer {
+    /* Apply a distinct highlight color/style when selected */
+    background-color: var(--primary-color) !important; /* Use primary color for highlight */
+    color: white !important; /* Ensure text color contrasts */
+    border: 2px solid var(--primary-color) !important;
+}
+
+/* Ensure default hover/active states are overridden by selected/animating */
+.quiz-answer-button.selected-answer:hover,
+.quiz-answer-button.selected-answer:active {
+    filter: none; /* Remove brightness filter if already highlighted */
+    transform: none; /* Let animation handle transform */
+}
+
+/* Base styling for quiz player elements to use custom variables */
+.quiz-player-container h2,
+.quiz-player-container p,
+.quiz-player-container h3 {
+    color: var(--text-color);
+}
+
+.quiz-player-container .progress-bar-container {
+    background-color: color-mix(in srgb, var(--button-color) 70%, transparent); /* Lighter version of button color */
+}
+
+.quiz-player-container .progress-bar {
+    background-color: var(--primary-color);
+}
+
+.quiz-player-container .quiz-answer-button {
+    background-color: var(--button-color);
+    color: var(--text-color);
+    border: 1px solid var(--button-color); /* Default border color */
+}
+
+.quiz-player-container .quiz-answer-button:hover {
+    filter: brightness(90%); /* Darken on hover */
+}
+
+.quiz-player-container .back-button {
+    background-color: var(--button-color);
+    color: var(--text-color);
+}
+.quiz-player-container .back-button:hover {
+    filter: brightness(90%);
+}
+
+/* Helper for RGBA conversion for box-shadow glow */
+/* We need to extract RGB from hex colors to use in rgba() */
+/* This is a CSS trick, requires dynamic CSS variable update from JS for proper glow */
+/* For simplicity now, we can use a hardcoded glow color or just a solid color highlight */
+/* For a true glow with custom color, would need to convert hex to rgb in JS and pass as separate variables */
