@@ -466,14 +466,21 @@ interface QuizPlayerProps {
   db: Firestore;
 }
 
+
+
+// QuizPlayer Component (for playing the quiz)
+interface QuizPlayerProps {
+  db: Firestore;
+}
+
 const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
 
   const [funnelData, setFunnelData] = useState<FunnelData | null>(null);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [clickedAnswerIndex, setClickedAnswerIndex] = useState<number | null>(null); // NEW: Track clicked answer for animation
-  const [isAnimating, setIsAnimating] = useState(false); // NEW: Prevent multiple clicks during animation
+  const [clickedAnswerIndex, setClickedAnswerIndex] = useState<number | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
 
 
   // Load specific funnel data for playing
@@ -483,6 +490,72 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         alert('No funnel ID provided!');
         navigate('/');
         return;
+      }
+      try {
+        const funnelDocRef = doc(db, 'funnels', funnelId);
+        const funnelDoc = await getDoc(funnelDocRef);
+        if (funnelDoc.exists()) {
+          const funnel = funnelDoc.data() as Funnel;
+          setFunnelData({ ...defaultFunnelData, ...funnel.data });
+        } else {
+          alert('Funnel not found! Please check the link.');
+          navigate('/');
+        }
+      } catch (error) {
+        console.error("Error loading funnel for play:", error);
+        alert("Failed to load quiz. Check console for details.");
+        navigate('/');
+      }
+    };
+    getFunnelForPlay();
+  }, [funnelId, db, navigate]);
+
+  const handleAnswerClick = (answerIndex: number) => {
+    if (isAnimating) return; // Prevent clicks during animation
+
+    setIsAnimating(true); // Start animation
+    setClickedAnswerIndex(answerIndex); // Highlight clicked button
+
+    setTimeout(() => {
+      // Animation/Highlight duration
+      setIsAnimating(false);
+      setClickedAnswerIndex(null); // Remove highlight
+
+      if (!funnelData || funnelData.questions.length === 0) return;
+
+      // Check if it's the last question (index 5 for 6 questions total) AND we have exactly 6 questions
+      if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
+        let redirectLink = funnelData.finalRedirectLink || "https://example.com/default-final-redirect-link";
+
+        // NEW LOGIC: Attach tracking parameters if available
+        if (funnelData.tracking && funnelData.tracking.trim() !== '') {
+          // Check if the link already has query parameters
+          const hasQueryParams = redirectLink.includes('?');
+          // Append tracking parameters, adding '?' or '&' as needed
+          redirectLink = `${redirectLink}${hasQueryParams ? '&' : '?'}${funnelData.tracking.trim()}`;
+        }
+
+        console.log("Quiz complete! Redirecting to:", redirectLink);
+        alert('Quiz complete! Redirecting you to your personalized offer.');
+        window.location.href = redirectLink;
+        return;
+      }
+
+      // Move to the next question if not the last
+      if (currentQuestionIndex < funnelData.questions.length - 1) {
+        setCurrentQuestionIndex(currentQuestionIndex + 1);
+      } else {
+        alert('Quiz complete! No more questions. Returning to home.');
+        navigate('/'); // Go back to dashboard after completion
+      }
+    }, 500); // 500ms delay for animation
+  };
+
+  // ... (QuizPlayer 组件的其余部分保持不变) ...
+};
+
+// ... (App.tsx 文件底部其他组件的代码保持不变) ...
+
       }
       try {
         const funnelDocRef = doc(db, 'funnels', funnelId);
