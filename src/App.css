@@ -305,3 +305,95 @@ p {
         width: 100%; /* Ensure they take full width */
     }
 }
+/* Add/Modify these rules in your src/App.css */
+
+/* Spacing for the new funnel input and button */
+.create-funnel-section {
+    display: flex;
+    flex-direction: column; /* Stack input and button vertically for better spacing */
+    gap: 15px; /* Space between input and button */
+    margin-bottom: 30px; /* Space below the creation section */
+    align-items: center; /* Center items if using flex column */
+}
+
+.create-funnel-section .funnel-name-input {
+    width: 100%; /* Ensure input takes full width */
+    max-width: 400px; /* Limit max width for better aesthetics */
+    padding: 12px 15px; /* Larger padding for input */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+}
+
+/* Ensure the add button has consistent styling and sufficient width */
+.create-funnel-section .add-button {
+    width: 100%; /* Take full width of its container */
+    max-width: 400px; /* Match input max width */
+    padding: 12px 24px;
+    font-size: 1.1em;
+    /* other button styles are already in App.css */
+}
+
+/* Spacing for individual funnel items in the list */
+.funnel-list .funnel-item {
+    background-color: #f0f4f8; /* Light background for list item */
+    padding: 15px 20px;
+    margin-bottom: 10px; /* Space between list items */
+    border-radius: 8px;
+    display: flex;
+    flex-wrap: wrap; /* Allow wrapping of elements */
+    justify-content: space-between; /* Push name to left, actions to right */
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.funnel-item span {
+    flex-grow: 1; /* Allow name to take available space */
+    font-weight: bold;
+    color: #333;
+    margin-right: 15px; /* Space between name and buttons */
+    word-break: break-word; /* Prevent long names from overflowing */
+}
+
+.funnel-actions {
+    display: flex;
+    gap: 10px; /* Space between action buttons */
+    flex-wrap: wrap; /* Allow buttons to wrap on small screens */
+    margin-top: 5px; /* Small margin for wrap */
+}
+
+.funnel-actions .button-link {
+    background: none;
+    border: none;
+    color: #007bff; /* Link color */
+    cursor: pointer;
+    text-decoration: none; /* Remove underline by default */
+    padding: 5px 8px;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+    font-size: 0.9em; /* Slightly smaller text for links */
+}
+
+.funnel-actions .button-link:hover {
+    background-color: #e9ecef;
+    text-decoration: underline;
+}
+
+.funnel-actions .delete-button {
+    color: #dc3545; /* Red color for delete */
+}
+
+/* Responsive adjustments for spacing on very small screens */
+@media (max-width: 480px) {
+    .funnel-item {
+        flex-direction: column; /* Stack name and actions */
+        align-items: flex-start; /* Align text to left */
+    }
+    .funnel-item span {
+        margin-bottom: 10px; /* Space between name and stacked buttons */
+    }
+    .funnel-actions {
+        width: 100%; /* Ensure buttons take full width when stacked */
+        justify-content: space-around; /* Distribute buttons */
+    }
+}
