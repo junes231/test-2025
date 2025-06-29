@@ -5,7 +5,7 @@ import './App.css'; // Make sure you have this CSS file for basic styling
 interface Answer {
   id: string; // Unique ID for the answer option
   text: string; // The text of the answer
-  affiliateLink?: string; // NEW: Optional affiliate link for this specific answer
+  // Removed affiliateLink?: string; as links are now global for the final redirect
 }
 
 interface Question {
@@ -19,7 +19,7 @@ interface Question {
 const loadQuestionsFromLocalStorage = (): Question[] => {
   try {
     const storedQuestions = localStorage.getItem('quizQuestions');
-    // Ensure all answers have an ID for React keys, and affiliateLink is handled
+    // Ensure all answers have an ID for React keys
     const parsedQuestions: Question[] = storedQuestions ? JSON.parse(storedQuestions) : [];
     return parsedQuestions.map(q => ({
       ...q,
@@ -151,14 +151,11 @@ export default function App() {
 
   // --- Handlers for Quiz Player ---
   const handleAnswerClick = (answerIndex: number) => {
-    const currentQuestion = questions[currentQuizQuestionIndex];
-
     // Check if it's the last question (index 5 for 6 questions total)
     if (currentQuizQuestionIndex === 5 && questions.length === 6) {
       // THIS IS THE REDIRECTION LOGIC FOR THE 6TH QUESTION
-      const finalAnswer = currentQuestion.answers[answerIndex];
-      // Prioritize the link directly on the answer, then fallbacks
-      const redirectLink = finalAnswer.affiliateLink || affiliateLinks.clickbank || affiliateLinks.amazon || "https://example.com/default-affiliate-link"; // Fallback link
+      // Now, it redirects to a single link from LinkSettings, not per-answer
+      const redirectLink = affiliateLinks.clickbank || affiliateLinks.amazon || "https://example.com/default-affiliate-link"; // Fallback link
 
       console.log("Quiz complete! Redirecting to:", redirectLink);
       alert('Quiz complete! Redirecting you to your personalized offer.'); // Replaced confirm with alert
@@ -203,8 +200,8 @@ export default function App() {
               onClick={() => setCurrentView('linkSettings')}
             >
               <h3><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h3>
-              <p>Click here to configure your general affiliate links (used as fallback).</p>
-              <small>Note: Final quiz redirection links are set per-answer on the 6th question.</small>
+              <p>Click here to configure your general affiliate links.</p>
+              <small>This link will be used for final quiz redirection.</small>
             </div>
 
             <div
@@ -234,12 +231,11 @@ export default function App() {
 
       case 'questionForm':
         const questionToEdit = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
-        const isLastQuestion = selectedQuestionIndex === 5; // Check if it's the 6th question (index 5)
+        // isLastQuestion is no longer needed for special link inputs
         return (
           <QuestionForm
             question={questionToEdit}
             questionIndex={selectedQuestionIndex}
-            isLastQuestion={isLastQuestion} // Pass this prop
             onSave={handleQuestionFormSave}
             onCancel={handleQuestionFormCancel}
             onDelete={handleDeleteQuestion}
@@ -364,19 +360,19 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ questions, onAddQuestion, onEdi
 interface QuestionFormProps {
   question?: Question; // undefined for new question
   questionIndex: number | null; // index for current question, null for new
-  isLastQuestion: boolean; // NEW: Indicates if this is the 6th question
+  // Removed isLastQuestion prop as per-answer links are no longer needed
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
 }
 
-const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, isLastQuestion, onSave, onCancel, onDelete }) => {
+const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
   const [title, setTitle] = useState(question ? question.title : '');
   // Initialize answers with 4 empty placeholders if new, or existing answers
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
       ? question.answers
-      : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}`, affiliateLink: '' }))
+      : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
 
   useEffect(() => { // Update form fields if selected question changes
@@ -384,25 +380,16 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, is
     setAnswers(
       question && question.answers.length > 0
         ? question.answers
-        : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}`, affiliateLink: '' }))
+        : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
     );
   }, [question]);
 
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) { // Ensure the answer object exists
-      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '', affiliateLink: '' };
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' }; // No affiliateLink here
     }
     updatedAnswers[index].text = value;
-    setAnswers(updatedAnswers);
-  };
-
-  const handleAffiliateLinkChange = (index: number, value: string) => {
-    const updatedAnswers = [...answers];
-    if (!updatedAnswers[index]) { // Ensure the answer object exists
-      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '', affiliateLink: '' };
-    }
-    updatedAnswers[index].affiliateLink = value;
     setAnswers(updatedAnswers);
   };
 
@@ -415,15 +402,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, is
     if (filteredAnswers.length === 0) {
         alert('Please provide at least one answer option.');
         return;
-    }
-    // For the last question, ensure affiliate links are set for provided answers
-    if (isLastQuestion) {
-        for (const ans of filteredAnswers) {
-            if (!ans.affiliateLink || ans.affiliateLink.trim() === '') {
-                alert(`Please set an affiliate link for all answers of Question ${questionIndex !== null ? questionIndex + 1 : ''}.`);
-                return;
-            }
-        }
     }
 
     onSave({
@@ -467,15 +445,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, is
               onChange={(e) => handleAnswerTextChange(index, e.target.value)}
               placeholder={`Option ${String.fromCharCode(65 + index)}`}
             />
-            {isLastQuestion && ( // ONLY show affiliate link input for the last question
-              <input
-                type="text"
-                value={answers[index]?.affiliateLink || ''}
-                onChange={(e) => handleAffiliateLinkChange(index, e.target.value)}
-                placeholder={`Affiliate Link for Option ${String.fromCharCode(65 + index)}`}
-                className="affiliate-link-input"
-              />
-            )}
+            {/* Removed affiliate link input as it's no longer needed per answer */}
           </div>
         ))}
       </div>
@@ -518,18 +488,19 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
     return (
         <div className="link-settings-container">
             <h2><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h2>
-            <p>These links are used as fallback if specific links are not set for the 6th question's answers.</p>
+            <p>This link will be used for final quiz redirection after the 6th question.</p>
             <div className="form-group">
-                <label>ClickBank Link (Fallback):</label>
+                <label>Final Redirect Link (ClickBank or Your Main Link):</label>
                 <input
                     type="text"
-                    value={cbLink}
+                    value={cbLink} // Using cbLink for the main final redirect link
                     onChange={(e) => setCbLink(e.target.value)}
-                    placeholder="https://clickbank.com/..."
+                    placeholder="https://your-main-affiliate-product.com"
                 />
             </div>
+            {/* Removed Amazon link and tracking parameters if they are not specifically used for final redirect */}
             <div className="form-group">
-                <label>Amazon Affiliate Link (Fallback):</label>
+                <label>Optional: Amazon Affiliate Link (Fallback):</label>
                 <input
                     type="text"
                     value={amzLink}
@@ -538,7 +509,7 @@ const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliat
                 />
             </div>
             <div className="form-group">
-                <label>Tracking Parameters:</label>
+                <label>Optional: Tracking Parameters:</label>
                 <input
                     type="text"
                     value={tracking}
@@ -649,4 +620,3 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ question, currentQuestionNumber
         </div>
     );
 };
-
