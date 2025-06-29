@@ -461,7 +461,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   );
 }
 
-// --- QuizPlayer Component (for playing the quiz) ---
+// QuizPlayer Component (for playing the quiz)
 interface QuizPlayerProps {
   db: Firestore;
 }
@@ -551,10 +551,10 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     }, 500); // 500ms delay for animation
   };
 
-  // ... (QuizPlayer 组件的其余部分保持不变) ...
+  
 };
 
-// ... (App.tsx 文件底部其他组件的代码保持不变) ...
+
 
       }
       try {
