@@ -5,7 +5,6 @@ import './App.css'; // Make sure you have this CSS file for basic styling
 interface Answer {
   id: string; // Unique ID for the answer option
   text: string; // The text of the answer
-  // Removed affiliateLink?: string; as links are now global for the final redirect
 }
 
 interface Question {
@@ -40,14 +39,19 @@ const saveQuestionsToLocalStorage = (questions: Question[]) => {
   }
 };
 
-// Helper to load affiliate links from local storage (for fallback/general settings)
+// Helper to load affiliate links from local storage (now simplified)
 const loadAffiliateLinksFromLocalStorage = () => {
   try {
     const storedLinks = localStorage.getItem('affiliateLinks');
-    return storedLinks ? JSON.parse(storedLinks) : { clickbank: '', amazon: '', tracking: '', conversionGoal: 'Product Purchase' };
+    const parsed = storedLinks ? JSON.parse(storedLinks) : {};
+    return { 
+      finalRedirectLink: parsed.finalRedirectLink || '', // Primary link
+      tracking: parsed.tracking || '', 
+      conversionGoal: parsed.conversionGoal || 'Product Purchase' 
+    };
   } catch (error) {
     console.error("Failed to load affiliate links from local storage:", error);
-    return { clickbank: '', amazon: '', tracking: '', conversionGoal: 'Product Purchase' };
+    return { finalRedirectLink: '', tracking: '', conversionGoal: 'Product Purchase' };
   }
 };
 
@@ -155,7 +159,7 @@ export default function App() {
     if (currentQuizQuestionIndex === 5 && questions.length === 6) {
       // THIS IS THE REDIRECTION LOGIC FOR THE 6TH QUESTION
       // Now, it redirects to a single link from LinkSettings, not per-answer
-      const redirectLink = affiliateLinks.clickbank || affiliateLinks.amazon || "https://example.com/default-affiliate-link"; // Fallback link
+      const redirectLink = affiliateLinks.finalRedirectLink || "https://example.com/default-final-redirect-link"; // Fallback link
 
       console.log("Quiz complete! Redirecting to:", redirectLink);
       alert('Quiz complete! Redirecting you to your personalized offer.'); // Replaced confirm with alert
@@ -199,9 +203,9 @@ export default function App() {
               className="dashboard-card"
               onClick={() => setCurrentView('linkSettings')}
             >
-              <h3><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h3>
-              <p>Click here to configure your general affiliate links.</p>
-              <small>This link will be used for final quiz redirection.</small>
+              <h3><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h3>
+              <p>Click here to configure the custom link for quiz redirection.</p>
+              <small>This link will be used when the quiz is completed.</small>
             </div>
 
             <div
@@ -360,7 +364,6 @@ const QuizEditor: React.FC<QuizEditorProps> = ({ questions, onAddQuestion, onEdi
 interface QuestionFormProps {
   question?: Question; // undefined for new question
   questionIndex: number | null; // index for current question, null for new
-  // Removed isLastQuestion prop as per-answer links are no longer needed
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
@@ -387,7 +390,7 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) { // Ensure the answer object exists
-      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' }; // No affiliateLink here
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' };
     }
     updatedAnswers[index].text = value;
     setAnswers(updatedAnswers);
@@ -445,7 +448,6 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
               onChange={(e) => handleAnswerTextChange(index, e.target.value)}
               placeholder={`Option ${String.fromCharCode(65 + index)}`}
             />
-            {/* Removed affiliate link input as it's no longer needed per answer */}
           </div>
         ))}
       </div>
@@ -468,44 +470,33 @@ const QuestionForm: React.FC<QuestionFormProps> = ({ question, questionIndex, on
 
 
 interface LinkSettingsProps {
-    affiliateLinks: { clickbank: string; amazon: string; tracking: string; conversionGoal: string };
-    setAffiliateLinks: React.Dispatch<React.SetStateAction<{ clickbank: string; amazon: string; tracking: string; conversionGoal: string }>>;
+    affiliateLinks: { finalRedirectLink: string; tracking: string; conversionGoal: string };
+    setAffiliateLinks: React.Dispatch<React.SetStateAction<{ finalRedirectLink: string; tracking: string; conversionGoal: string }>>;
     onBack: () => void;
 }
 
 const LinkSettings: React.FC<LinkSettingsProps> = ({ affiliateLinks, setAffiliateLinks, onBack }) => {
-    const [cbLink, setCbLink] = useState(affiliateLinks.clickbank);
-    const [amzLink, setAmzLink] = useState(affiliateLinks.amazon);
+    const [redirectLink, setRedirectLink] = useState(affiliateLinks.finalRedirectLink);
     const [tracking, setTracking] = useState(affiliateLinks.tracking);
     const [goal, setGoal] = useState(affiliateLinks.conversionGoal);
 
     const handleSave = () => {
-        setAffiliateLinks({ clickbank: cbLink, amazon: amzLink, tracking, conversionGoal: goal });
-        alert('Affiliate Link Settings Saved!');
+        setAffiliateLinks({ finalRedirectLink: redirectLink, tracking, conversionGoal: goal });
+        alert('Link Settings Saved!');
         onBack();
     };
 
     return (
         <div className="link-settings-container">
-            <h2><span role="img" aria-label="link">🔗</span> Affiliate Link Settings</h2>
-            <p>This link will be used for final quiz redirection after the 6th question.</p>
+            <h2><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h2>
+            <p>This is the custom link where users will be redirected after completing the quiz.</p>
             <div className="form-group">
-                <label>Final Redirect Link (ClickBank or Your Main Link):</label>
+                <label>Custom Final Redirect Link:</label>
                 <input
                     type="text"
-                    value={cbLink} // Using cbLink for the main final redirect link
-                    onChange={(e) => setCbLink(e.target.value)}
-                    placeholder="https://your-main-affiliate-product.com"
-                />
-            </div>
-            {/* Removed Amazon link and tracking parameters if they are not specifically used for final redirect */}
-            <div className="form-group">
-                <label>Optional: Amazon Affiliate Link (Fallback):</label>
-                <input
-                    type="text"
-                    value={amzLink}
-                    onChange={(e) => setAmzLink(e.target.value)}
-                    placeholder="https://amazon.com/..."
+                    value={redirectLink}
+                    onChange={(e) => setRedirectLink(e.target.value)}
+                    placeholder="https://your-custom-product-page.com"
                 />
             </div>
             <div className="form-group">
