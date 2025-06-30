@@ -529,6 +529,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       if (currentQuestionIndex < funnelData.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
+        // This is the fallback path if not enough questions are set up or last question of a short quiz
         alert('Quiz complete! No more questions. Returning to home.');
         navigate('/');
       }
@@ -549,7 +550,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       <div className="quiz-player-container">
         <h2>Quiz Not Ready</h2>
         <p>This funnel either has no questions or fewer than the required 6 questions. Please contact the funnel creator.</p>
-        <button className="back-button" onClick={() => navigate('/')}>
+        <button className="back-button" onClick={() => navigate('/')}> {/* Removed this button */}
           <span role="img" aria-label="back">←</span> Back to Home
         </button>
       </div>
@@ -558,20 +559,23 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
   const currentQuestion = funnelData.questions[currentQuestionIndex];
 
+  // Apply custom colors using CSS variables
+  // The outer div (quiz-player-container) will apply the background and text color for the whole player
+  // Individual elements like buttons will use these vars or specific overrides
   const quizPlayerContainerStyle = {
     '--primary-color': funnelData.primaryColor,
     '--button-color': funnelData.buttonColor,
     '--background-color': funnelData.backgroundColor,
     '--text-color': funnelData.textColor,
-    backgroundColor: funnelData.backgroundColor,
-    color: funnelData.textColor,
-  } as React.CSSProperties;
+    backgroundColor: funnelData.backgroundColor, // Apply background directly
+    color: funnelData.textColor, // Apply text color directly
+  } as React.CSSProperties; // Type assertion for custom properties
 
 
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
       <h2 style={{color: 'var(--text-color)'}}><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
-      <div className="progress-bar-container" style={{backgroundColor: 'var(--button-color)'}}>
+      <div className="progress-bar-container" style={{backgroundColor: 'color-mix(in srgb, var(--button-color) 70%, transparent)'}}>
         <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div>
       </div>
       <p className="question-counter" style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
@@ -595,15 +599,19 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           </button>
         ))}
       </div>
-      <button className="back-button" onClick={() => navigate('/')} style={{
+      {/* Removed the Back to Home button from QuizPlayer */}
+      {/* <button className="back-button" onClick={() => navigate('/')} style={{
         backgroundColor: 'var(--button-color)',
         color: 'var(--text-color)',
       }}>
         <span role="img" aria-label="back">←</span> Back to Home
-      </button>
+      </button> */}
     </div>
   );
 };
+
+
+// --- Re-usable UI Components (extracted from App for clarity) ---
 
 interface QuizEditorComponentProps {
   questions: Question[];
