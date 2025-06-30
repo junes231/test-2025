@@ -38,24 +38,26 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string;
-  name: string;
+  id: string; // Document ID in Firestore
+  name: string; // Funnel name
   data: FunnelData;
 }
 
+// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
 
+// Default values for funnel data, including colors
 const defaultFunnelData: FunnelData = {
   questions: [],
   finalRedirectLink: '',
   tracking: '',
   conversionGoal: 'Product Purchase',
-  primaryColor: '#007bff',
-  buttonColor: '#28a745',
-  backgroundColor: '#f8f9fa',
-  textColor: '#333333',
+  primaryColor: '#007bff', // Default blue
+  buttonColor: '#28a745',  // Default green
+  backgroundColor: '#f8f9fa', // Default light gray
+  textColor: '#333333',    // Default dark text
 };
 
 
@@ -147,6 +149,7 @@ export default function App({ db }: AppProps) {
     try {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
+      console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId); // ADDED LOG
       getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
@@ -238,13 +241,14 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
   );
 };
 
+// FunnelEditor (now for editing a specific funnel's quiz & links)
 interface FunnelEditorProps {
   db: Firestore;
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
 }
 
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
-  const { funnelId } = useParams<{ funnelId: string }>();
+  const { funnelId } = useParams<{ funnelId: string }>(); // Get funnelId from URL
   const navigate = useNavigate();
 
   const [funnelName, setFunnelName] = useState('Loading...');
@@ -252,14 +256,16 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
   const [tracking, setTracking] = useState('');
   const [conversionGoal, setConversionGoal] = useState('Product Purchase');
+  // States for colors
   const [primaryColor, setPrimaryColor] = useState(defaultFunnelData.primaryColor);
   const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
   const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
   const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
+  const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard'); // Changed default subview name
 
+  // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -268,22 +274,27 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       if (funnelDoc.exists()) {
         const funnel = funnelDoc.data() as Funnel;
         setFunnelName(funnel.name);
+        // Load data, merging with defaults to ensure all fields exist
         setQuestions(funnel.data.questions || defaultFunnelData.questions);
         setFinalRedirectLink(funnel.data.finalRedirectLink || defaultFunnelData.finalRedirectLink);
         setTracking(funnel.data.tracking || defaultFunnelData.tracking);
         setConversionGoal(funnel.data.conversionGoal || defaultFunnelData.conversionGoal);
+        // Load colors
         setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
         setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
         setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
         setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
+        console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", funnel.data.finalRedirectLink); // ADDED LOG
       } else {
         alert('Funnel not found!');
-        navigate('/');
+        navigate('/'); // Go back to dashboard
       }
     };
     getFunnel();
   }, [funnelId, db, navigate]);
 
+  // Save funnel data to Firestore whenever relevant states change
+  // Use a debounce or save button for large forms in production
   const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
     const newData: FunnelData = {
@@ -291,24 +302,28 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       finalRedirectLink,
       tracking,
       conversionGoal,
+      // Include colors in saved data
       primaryColor,
       buttonColor,
       backgroundColor,
       textColor,
     };
+    console.log("FunnelEditor: Saving finalRedirectLink to Firestore:", finalRedirectLink); // ADDED LOG
     updateFunnelData(funnelId, newData);
   }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
       primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
 
+  // Use useEffect to save changes automatically, with a debounce for performance
   useEffect(() => {
     const handler = setTimeout(() => {
       saveFunnelToFirestore();
-    }, 1000);
+    }, 1000); // Save 1 second after last change
     return () => clearTimeout(handler);
   }, [questions, finalRedirectLink, tracking, conversionGoal,
       primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
 
 
+  // --- Quiz Question Management in Editor ---
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
       alert('You can only have up to 6 questions for this quiz.');
@@ -321,8 +336,8 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       answers: Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` })),
     };
     setQuestions([...questions, newQuestion]);
-    setSelectedQuestionIndex(questions.length);
-    setCurrentSubView('questionForm');
+    setSelectedQuestionIndex(questions.length); // Select the new question
+    setCurrentSubView('questionForm'); // Navigate to the form
   };
 
   const handleEditQuestion = (index: number) => {
@@ -334,8 +349,8 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     if (selectedQuestionIndex !== null && window.confirm('Are you sure you want to delete this question?')) {
       const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
       setQuestions(updatedQuestions);
-      setSelectedQuestionIndex(null);
-      setCurrentSubView('quizEditorList');
+      setSelectedQuestionIndex(null); // Clear selection
+      setCurrentSubView('quizEditorList'); // Go back to the list
     }
   };
 
@@ -357,6 +372,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     setCurrentSubView('quizEditorList');
   };
 
+  // --- Render Sub-views within FunnelEditor ---
   const renderEditorContent = () => {
     switch (currentSubView) {
       case 'quizEditorList':
@@ -365,7 +381,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             questions={questions}
             onAddQuestion={handleAddQuestion}
             onEditQuestion={handleEditQuestion}
-            onBack={() => setCurrentSubView('mainEditorDashboard')}
+            onBack={() => setCurrentSubView('mainEditorDashboard')} // Back to Funnel Dashboard
           />
         );
       case 'questionForm':
@@ -401,7 +417,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             onBack={() => setCurrentSubView('mainEditorDashboard')}
           />
         );
-      default:
+      default: // mainEditorDashboard
         return (
           <div className="dashboard-container">
             <h2><span role="img" aria-label="funnel">🥞</span> {funnelName} Editor</h2>
@@ -464,6 +480,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         if (funnelDoc.exists()) {
           const funnel = funnelDoc.data() as Funnel;
           setFunnelData({ ...defaultFunnelData, ...funnel.data });
+          console.log("QuizPlayer: Loaded funnel data for play:", funnel.data); // ADDED LOG
+          console.log("QuizPlayer: Loaded finalRedirectLink for play:", funnel.data.finalRedirectLink); // ADDED LOG
         } else {
           alert('Funnel not found! Please check the link.');
           navigate('/');
@@ -497,7 +515,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           redirectLink = `${redirectLink}${hasQueryParams ? '&' : '?'}${funnelData.tracking.trim()}`;
         }
 
-        console.log("Quiz complete! Redirecting to:", redirectLink);
+        console.log("QuizPlayer: Attempting redirect to:", redirectLink); // ADDED LOG
         window.location.href = redirectLink;
         return;
       }
@@ -571,6 +589,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           </button>
         ))}
       </div>
+      {/* Removed the Back to Home button from QuizPlayer */}
     </div>
   );
 };
