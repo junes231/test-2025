@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
@@ -38,12 +38,11 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string; // Document ID in Firestore
-  name: string; // Funnel name
+  id: string;
+  name: string;
   data: FunnelData;
 }
 
-// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
@@ -60,11 +59,11 @@ const defaultFunnelData: FunnelData = {
 };
 
 
-export default function App({ db }: AppProps) { // db is received here
+export default function App({ db }: AppProps) {
   const navigate = useNavigate();
 
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-  const funnelsCollectionRef = collection(db, 'funnels'); // This is correct, db is in scope
+  const funnelsCollectionRef = collection(db, 'funnels');
 
   const getFunnels = useCallback(async () => {
     try {
@@ -159,7 +158,6 @@ export default function App({ db }: AppProps) { // db is received here
 
   return (
     <Routes>
-      {/* NEW: Pass db prop to FunnelDashboard */}
       <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
       <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
       <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
@@ -168,27 +166,24 @@ export default function App({ db }: AppProps) { // db is received here
   );
 }
 
-// FunnelDashboard Component
 interface FunnelDashboardProps {
-  db: Firestore; // NEW: db prop added
+  db: Firestore;
   funnels: Funnel[];
   createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => { // NEW: db received here
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Re-fetch funnels on mount and when create/delete happens
   useEffect(() => {
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        // Correctly use db from props
         const funnelsCollectionRef = collection(db, 'funnels');
         const data = await getDocs(funnelsCollectionRef);
         const loadedFunnels = data.docs.map((doc) => {
@@ -209,7 +204,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
       }
     };
     fetchFunnels();
-  }, [db, createFunnel, deleteFunnel]); // NEW: db added to dependency array
+  }, [db, createFunnel, deleteFunnel]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -324,10 +319,11 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       if (funnelDoc.exists()) {
         const funnel = funnelDoc.data() as Funnel;
         setFunnelName(funnel.name);
-        setQuestions(funnel.data.questions || defaultFunnelData.questions);
-        setFinalRedirectLink(funnel.data.finalRedirectLink || defaultFunnelData.finalRedirectLink);
-        setTracking(funnel.data.tracking || defaultFunnelData.tracking);
-        setConversionGoal(funnel.data.conversionGoal || defaultFunnelData.conversionGoal);
+        // Corrected data loading to handle null/undefined fields properly
+        setQuestions(funnel.data.questions || []); // Ensure it's always an array
+        setFinalRedirectLink(funnel.data.finalRedirectLink || '');
+        setTracking(funnel.data.tracking || '');
+        setConversionGoal(funnel.data.conversionGoal || 'Product Purchase');
         setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
         setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
         setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
@@ -412,13 +408,14 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         alert('Please provide at least one answer option.');
         return;
     }
-    updatedQuestion.answers = filteredAnswers;
+    // Removed the problematic line: updatedQuestion.answers = filteredAnswers;
+    // The filteredAnswers are passed directly to onSave below.
 
     onSave({
       id: question?.id || Date.now().toString(),
-      title,
+      title: updatedQuestion.title, // Use updatedQuestion.title
       type: 'single-choice',
-      answers: filteredAnswers,
+      answers: filteredAnswers, // Pass filtered answers
     });
   };
 
@@ -514,9 +511,9 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
     // Filter out questions that don't have a title or any answers, or answers without text
     const validImportedQuestions = importedQuestions.filter(q => 
-        q.title && q.title.trim() !== '' && 
+        q.title && typeof q.title === 'string' && q.title.trim() !== '' && 
         Array.isArray(q.answers) && q.answers.length > 0 &&
-        !q.answers.some(a => !a.text || a.text.trim() === '')
+        q.answers.every(a => a.text && typeof a.text === 'string' && a.text.trim() !== '')
     );
 
     if (validImportedQuestions.length === 0) {
@@ -718,7 +715,6 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
             return;
         }
 
-        // Basic validation for the imported data structure
         const isValid = parsedData.every(q => 
             q.title && typeof q.title === 'string' && q.title.trim() !== '' && 
             Array.isArray(q.answers) && q.answers.length > 0 &&
@@ -730,14 +726,13 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
           return;
         }
 
-        // Assign new unique IDs to imported questions and answers to avoid key conflicts
         const questionsWithNewIds = parsedData.map(q => ({
           ...q,
-          id: Date.now().toString() + Math.random().toString(), // New unique ID for question
-          type: q.type || 'single-choice', // Default type if not provided
+          id: Date.now().toString() + Math.random().toString(),
+          type: q.type || 'single-choice',
           answers: q.answers.map(a => ({
             ...a,
-            id: a.id || Date.now().toString() + Math.random().toString(), // New unique ID for answer
+            id: a.id || Date.now().toString() + Math.random().toString(),
           }))
         }));
 
@@ -836,13 +831,12 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
         alert('Please provide at least one answer option.');
         return;
     }
-    // updatedQuestion.answers = filteredAnswers; // This line was causing an issue if updatedQuestion was not defined
-
+    // Corrected: Pass updatedQuestion.title and filteredAnswers directly
     onSave({
       id: question?.id || Date.now().toString(),
-      title,
+      title: title, // Use the state variable 'title'
       type: 'single-choice',
-      answers: filteredAnswers, // Pass filtered answers
+      answers: filteredAnswers,
     });
   };
 
@@ -904,7 +898,7 @@ interface LinkSettingsComponentProps {
     finalRedirectLink: string;
     setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
     tracking: string;
-    setTracking: React.Dispatch<React.SetStateAction<string>>;
+    setTracking: React.SetStateAction<string>;
     conversionGoal: string;
     setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
     onBack: () => void;
