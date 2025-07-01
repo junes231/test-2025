@@ -38,15 +38,17 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string;
-  name: string;
+  id: string; // Document ID in Firestore
+  name: string; // Funnel name
   data: FunnelData;
 }
 
+// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
 
+// Default values for funnel data, including colors
 const defaultFunnelData: FunnelData = {
   questions: [],
   finalRedirectLink: '',
@@ -148,10 +150,11 @@ export default function App({ db }: AppProps) {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
       console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
+      alert('Funnel data saved to cloud!'); // NEW: Success alert
       getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
-      alert("Failed to save funnel data. Check console for details.");
+      alert("Failed to save funnel data to cloud. Check console for details."); // NEW: Error alert
     }
   };
 
@@ -281,6 +284,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
   );
 };
 
+// FunnelEditor (now for editing a specific funnel's quiz & links)
 interface FunnelEditorProps {
   db: Firestore;
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
@@ -295,6 +299,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
   const [tracking, setTracking] = useState('');
   const [conversionGoal, setConversionGoal] = useState('Product Purchase');
+  // States for colors
   const [primaryColor, setPrimaryColor] = useState(defaultFunnelData.primaryColor);
   const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
   const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
@@ -306,6 +311,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
 
 
+  // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -334,6 +340,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     getFunnel();
   }, [funnelId, db, navigate]);
 
+  // Save funnel data to Firestore whenever relevant states change
   const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
     const newData: FunnelData = {
@@ -421,6 +428,24 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const renderEditorContent = () => {
+    if (isLoading) {
+      return (
+        <div className="dashboard-container">
+          <p className="loading-message">Loading funnel data...</p>
+        </div>
+      );
+    }
+    if (error) {
+      return (
+        <div className="dashboard-container">
+          <p className="error-message">{error}</p>
+          <button className="back-button" onClick={() => navigate('/')}>
+            <span role="img" aria-label="back">←</span> Back to All Funnels
+          </button>
+        </div>
+      );
+    }
+
     switch (currentSubView) {
       case 'quizEditorList':
         return (
