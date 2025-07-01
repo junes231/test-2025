@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
@@ -38,11 +38,12 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string;
-  name: string;
+  id: string; // Document ID in Firestore
+  name: string; // Funnel name
   data: FunnelData;
 }
 
+// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
@@ -59,11 +60,11 @@ const defaultFunnelData: FunnelData = {
 };
 
 
-export default function App({ db }: AppProps) {
+export default function App({ db }: AppProps) { // db is received here
   const navigate = useNavigate();
 
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-  const funnelsCollectionRef = collection(db, 'funnels');
+  const funnelsCollectionRef = collection(db, 'funnels'); // This is correct, db is in scope
 
   const getFunnels = useCallback(async () => {
     try {
@@ -158,7 +159,8 @@ export default function App({ db }: AppProps) {
 
   return (
     <Routes>
-      <Route path="/" element={<FunnelDashboard funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
+      {/* NEW: Pass db prop to FunnelDashboard */}
+      <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
       <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
       <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
       <Route path="*" element={<h2>404 Not Found</h2>} />
@@ -166,23 +168,27 @@ export default function App({ db }: AppProps) {
   );
 }
 
+// FunnelDashboard Component
 interface FunnelDashboardProps {
+  db: Firestore; // NEW: db prop added
   funnels: Funnel[];
   createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel, deleteFunnel }) => {
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => { // NEW: db received here
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Re-fetch funnels on mount and when create/delete happens
   useEffect(() => {
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
       try {
+        // Correctly use db from props
         const funnelsCollectionRef = collection(db, 'funnels');
         const data = await getDocs(funnelsCollectionRef);
         const loadedFunnels = data.docs.map((doc) => {
@@ -203,7 +209,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
       }
     };
     fetchFunnels();
-  }, [createFunnel, deleteFunnel]);
+  }, [db, createFunnel, deleteFunnel]); // NEW: db added to dependency array
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -430,7 +436,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             onAddQuestion={handleAddQuestion}
             onEditQuestion={handleEditQuestion}
             onBack={() => setCurrentSubView('mainEditorDashboard')}
-            onImportQuestions={handleImportQuestions} // Pass the import handler
+            onImportQuestions={handleImportQuestions}
           />
         );
       case 'questionForm':
@@ -501,12 +507,25 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   // NEW: handleImportQuestions function
   const handleImportQuestions = (importedQuestions: Question[]) => {
+    // Check if adding imported questions would exceed the 6-question limit
     if (questions.length + importedQuestions.length > 6) {
       alert(`Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`);
       return;
     }
-    setQuestions([...questions, ...importedQuestions]);
-    alert(`Successfully imported ${importedQuestions.length} questions!`);
+    // Filter out questions that don't have a title or any answers, or answers without text
+    const validImportedQuestions = importedQuestions.filter(q => 
+        q.title && q.title.trim() !== '' && 
+        Array.isArray(q.answers) && q.answers.length > 0 &&
+        !q.answers.some(a => !a.text || a.text.trim() === '')
+    );
+
+    if (validImportedQuestions.length === 0) {
+        alert('No valid questions found in the imported file. Please check the file format (title and answer text are required).');
+        return;
+    }
+
+    setQuestions(prevQuestions => [...prevQuestions, ...validImportedQuestions]);
+    alert(`Successfully imported ${validImportedQuestions.length} questions!`);
   };
 
 
@@ -671,7 +690,7 @@ interface QuizEditorComponentProps {
   onAddQuestion: () => void;
   onEditQuestion: (index: number) => void;
   onBack: () => void;
-  onImportQuestions: (importedQuestions: Question[]) => void; // NEW: Import handler
+  onImportQuestions: (importedQuestions: Question[]) => void;
 }
 
 const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, onAddQuestion, onEditQuestion, onBack, onImportQuestions }) => {
@@ -694,9 +713,20 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
         const content = e.target?.result as string;
         const parsedData: Question[] = JSON.parse(content);
 
+        if (!Array.isArray(parsedData)) {
+            alert('Invalid JSON format. Expected an array of questions.');
+            return;
+        }
+
         // Basic validation for the imported data structure
-        if (!Array.isArray(parsedData) || parsedData.some(q => !q.title || !Array.isArray(q.answers) || q.answers.some(a => !a.text))) {
-          alert('Invalid JSON format. Please ensure it is an array of questions with titles and answers.');
+        const isValid = parsedData.every(q => 
+            q.title && typeof q.title === 'string' && q.title.trim() !== '' && 
+            Array.isArray(q.answers) && q.answers.length > 0 &&
+            q.answers.every(a => a.text && typeof a.text === 'string' && a.text.trim() !== '')
+        );
+
+        if (!isValid) {
+          alert('Invalid JSON format. Please ensure it is an array of questions, each with a "title" and an "answers" array, where each answer has a "text" field.');
           return;
         }
 
@@ -704,6 +734,7 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
         const questionsWithNewIds = parsedData.map(q => ({
           ...q,
           id: Date.now().toString() + Math.random().toString(), // New unique ID for question
+          type: q.type || 'single-choice', // Default type if not provided
           answers: q.answers.map(a => ({
             ...a,
             id: a.id || Date.now().toString() + Math.random().toString(), // New unique ID for answer
@@ -738,7 +769,7 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
           ref={fileInputRef}
           onChange={handleFileChange}
           accept=".json"
-          style={{ display: 'none' }} // Hide the actual file input
+          style={{ display: 'none' }}
         />
       </div>
 
