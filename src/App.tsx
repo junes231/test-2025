@@ -172,7 +172,7 @@ interface FunnelDashboardProps {
   createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
-
+import { collection, addDoc } from "firebase/firestore";
 const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
