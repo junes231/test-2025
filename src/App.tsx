@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
@@ -38,17 +38,15 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string; // Document ID in Firestore
-  name: string; // Funnel name
+  id: string;
+  name: string;
   data: FunnelData;
 }
 
-// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
 
-// Default values for funnel data, including colors
 const defaultFunnelData: FunnelData = {
   questions: [],
   finalRedirectLink: '',
@@ -150,11 +148,11 @@ export default function App({ db }: AppProps) {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
       console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
-      alert('Funnel data saved to cloud!'); // NEW: Success alert
+      alert('Funnel data saved to cloud!');
       getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
-      alert("Failed to save funnel data to cloud. Check console for details."); // NEW: Error alert
+      alert("Failed to save funnel data to cloud. Check console for details.");
     }
   };
 
@@ -410,16 +408,12 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
     updatedQuestion.answers = filteredAnswers;
 
-    if (selectedQuestionIndex !== null) {
-      const updatedQuestions = questions.map((q, i) =>
-        i === selectedQuestionIndex ? updatedQuestion : q
-      );
-      setQuestions(updatedQuestions);
-    } else {
-        setQuestions([...questions, updatedQuestion]);
-    }
-    setSelectedQuestionIndex(null);
-    setCurrentSubView('quizEditorList');
+    onSave({
+      id: question?.id || Date.now().toString(),
+      title,
+      type: 'single-choice',
+      answers: filteredAnswers,
+    });
   };
 
   const handleQuestionFormCancel = () => {
@@ -428,24 +422,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const renderEditorContent = () => {
-    if (isLoading) {
-      return (
-        <div className="dashboard-container">
-          <p className="loading-message">Loading funnel data...</p>
-        </div>
-      );
-    }
-    if (error) {
-      return (
-        <div className="dashboard-container">
-          <p className="error-message">{error}</p>
-          <button className="back-button" onClick={() => navigate('/')}>
-            <span role="img" aria-label="back">←</span> Back to All Funnels
-          </button>
-        </div>
-      );
-    }
-
     switch (currentSubView) {
       case 'quizEditorList':
         return (
@@ -454,6 +430,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             onAddQuestion={handleAddQuestion}
             onEditQuestion={handleEditQuestion}
             onBack={() => setCurrentSubView('mainEditorDashboard')}
+            onImportQuestions={handleImportQuestions} // Pass the import handler
           />
         );
       case 'questionForm':
@@ -521,6 +498,17 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         );
     }
   };
+
+  // NEW: handleImportQuestions function
+  const handleImportQuestions = (importedQuestions: Question[]) => {
+    if (questions.length + importedQuestions.length > 6) {
+      alert(`Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`);
+      return;
+    }
+    setQuestions([...questions, ...importedQuestions]);
+    alert(`Successfully imported ${importedQuestions.length} questions!`);
+  };
+
 
   return (
     <div className="App">
@@ -683,18 +671,79 @@ interface QuizEditorComponentProps {
   onAddQuestion: () => void;
   onEditQuestion: (index: number) => void;
   onBack: () => void;
+  onImportQuestions: (importedQuestions: Question[]) => void; // NEW: Import handler
 }
 
-const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, onAddQuestion, onEditQuestion, onBack }) => {
+const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, onAddQuestion, onEditQuestion, onBack, onImportQuestions }) => {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      alert('No file selected.');
+      return;
+    }
+    if (file.type !== 'application/json') {
+      alert('Please select a JSON file.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const parsedData: Question[] = JSON.parse(content);
+
+        // Basic validation for the imported data structure
+        if (!Array.isArray(parsedData) || parsedData.some(q => !q.title || !Array.isArray(q.answers) || q.answers.some(a => !a.text))) {
+          alert('Invalid JSON format. Please ensure it is an array of questions with titles and answers.');
+          return;
+        }
+
+        // Assign new unique IDs to imported questions and answers to avoid key conflicts
+        const questionsWithNewIds = parsedData.map(q => ({
+          ...q,
+          id: Date.now().toString() + Math.random().toString(), // New unique ID for question
+          answers: q.answers.map(a => ({
+            ...a,
+            id: a.id || Date.now().toString() + Math.random().toString(), // New unique ID for answer
+          }))
+        }));
+
+        onImportQuestions(questionsWithNewIds);
+      } catch (err) {
+        console.error("Error parsing JSON file:", err);
+        alert('Error reading or parsing JSON file. Please check file format.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="quiz-editor-container">
       <h2><span role="img" aria-label="quiz">📝</span> Quiz Question List</h2>
-      <button className="add-button" onClick={onAddQuestion}>
-        <span role="img" aria-label="add">➕</span> Add New Question
-      </button>
+      <div className="quiz-editor-actions">
+        <button className="add-button" onClick={onAddQuestion}>
+          <span role="img" aria-label="add">➕</span> Add New Question
+        </button>
+        <button className="import-button" onClick={triggerFileInput}>
+          <span role="img" aria-label="import">📥</span> Import Questions
+        </button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={handleFileChange}
+          accept=".json"
+          style={{ display: 'none' }} // Hide the actual file input
+        />
+      </div>
 
       {questions.length === 0 ? (
-        <p className="no-questions-message">No questions added yet. Click "Add New Question" to start!</p>
+        <p className="no-questions-message">No questions added yet. Click "Add New Question" or "Import Questions" to start!</p>
       ) : (
         <ul className="question-list">
           {questions.map((q, index) => (
@@ -756,13 +805,13 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
         alert('Please provide at least one answer option.');
         return;
     }
-    updatedQuestion.answers = filteredAnswers;
+    // updatedQuestion.answers = filteredAnswers; // This line was causing an issue if updatedQuestion was not defined
 
     onSave({
       id: question?.id || Date.now().toString(),
       title,
       type: 'single-choice',
-      answers: filteredAnswers,
+      answers: filteredAnswers, // Pass filtered answers
     });
   };
 
