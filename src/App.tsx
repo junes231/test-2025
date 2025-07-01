@@ -150,7 +150,7 @@ export default function App({ db }: AppProps) {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
       console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
-      getFunnels();
+      getFunnels(); // Refresh list to reflect changes
     } catch (error) {
       console.error("Error updating funnel:", error);
       alert("Failed to save funnel data. Check console for details.");
@@ -248,7 +248,7 @@ interface FunnelEditorProps {
 }
 
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
-  const { funnelId } = useParams<{ funnelId: string }>(); // Get funnelId from URL
+  const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
 
   const [funnelName, setFunnelName] = useState('Loading...');
@@ -263,7 +263,11 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
-  const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard'); // Changed default subview name
+  const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
+
+  // NEW: State to display debug info on screen
+  const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
+
 
   // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
@@ -284,7 +288,11 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
         setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
         setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
-        console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", funnel.data.finalRedirectLink);
+
+        // Update debug info on load
+        const loadedLink = funnel.data.finalRedirectLink || 'Empty';
+        setDebugLinkValue(`Loaded: ${loadedLink}`);
+        console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", loadedLink);
       } else {
         alert('Funnel not found!');
         navigate('/');
@@ -294,26 +302,25 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   }, [funnelId, db, navigate]);
 
   // Save funnel data to Firestore whenever relevant states change
-  // Use a debounce or save button for large forms in production
   const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
     const newData: FunnelData = {
       questions,
-      finalRedirectLink,
+      finalRedirectLink, // This is the state value from the input field
       tracking,
       conversionGoal,
-      // Include colors in saved data
       primaryColor,
       buttonColor,
       backgroundColor,
       textColor,
     };
+    // Update debug info on save attempt
+    setDebugLinkValue(`Saving: ${finalRedirectLink || 'Empty'}`);
     console.log("FunnelEditor: Saving finalRedirectLink to Firestore:", finalRedirectLink);
     updateFunnelData(funnelId, newData);
   }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
       primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
 
-  // Use useEffect to save changes automatically, with a debounce for performance
   useEffect(() => {
     const handler = setTimeout(() => {
       saveFunnelToFirestore();
@@ -323,7 +330,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
 
 
-  // --- Quiz Question Management in Editor ---
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
       alert('You can only have up to 6 questions for this quiz.');
@@ -372,7 +378,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     setCurrentSubView('quizEditorList');
   };
 
-  // --- Render Sub-views within FunnelEditor ---
   const renderEditorContent = () => {
     switch (currentSubView) {
       case 'quizEditorList':
@@ -527,6 +532,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       if (currentQuestionIndex < funnelData.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
+        // This is the fallback path if not enough questions are set up or last question of a short quiz
         alert('Quiz complete! No more questions. Returning to home.');
         navigate('/');
       }
