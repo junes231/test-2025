@@ -184,8 +184,8 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
-      console.log("FunnelDashboard: Attempting to fetch funnels. db instance:", db); // ADDED LOG
-      if (!db) { // ADDED CHECK
+      console.log("FunnelDashboard: Attempting to fetch funnels. db instance:", db);
+      if (!db) {
         setError("Firebase database not initialized. Please refresh or check Firebase config.");
         setIsLoading(false);
         return;
@@ -203,8 +203,8 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
           return funnelWithDefaultData;
         });
         setFunnels(loadedFunnels);
-        console.log("FunnelDashboard: Successfully loaded funnels."); // ADDED LOG
-      } catch (err: any) { // Catch specific error message
+        console.log("FunnelDashboard: Successfully loaded funnels.");
+      } catch (err: any) {
         console.error("Error fetching funnels in dashboard:", err);
         let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
         if (err.code === 'permission-denied') {
@@ -220,7 +220,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
       }
     };
     fetchFunnels();
-  }, [db, createFunnel, deleteFunnel]); // db added to dependency array
+  }, [db, createFunnel, deleteFunnel]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -665,7 +665,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       <div className="progress-bar-container" style={{backgroundColor: 'color-mix(in srgb, var(--button-color) 70%, transparent)'}}>
         <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div>
       </div>
-      <p className="question-counter" style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
+      <p style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
 
       <h3 style={{color: 'var(--text-color)'}}>{currentQuestion.title}</h3>
 
