@@ -43,7 +43,6 @@ interface Funnel {
   data: FunnelData;
 }
 
-// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
@@ -185,9 +184,11 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
       setIsLoading(true);
       setError(null);
       console.log("FunnelDashboard: Attempting to fetch funnels. db instance:", db);
-      if (!db) {
-        setError("Firebase database not initialized. Please refresh or check Firebase config.");
-        setIsLoading(false);
+      if (!db || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = "Firebase Firestore functions not yet loaded or db not initialized. Retrying...";
+        console.warn("FunnelDashboard:", errMessage);
+        setError(errMessage);
+        setTimeout(fetchFunnels, 500);
         return;
       }
       try {
@@ -332,7 +333,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       if (funnelDoc.exists()) {
         const funnel = funnelDoc.data() as Funnel;
         setFunnelName(funnel.name);
-        setQuestions(funnel.data.questions || []); // Ensure it's always an array
+        setQuestions(funnel.data.questions || []);
         setFinalRedirectLink(funnel.data.finalRedirectLink || '');
         setTracking(funnel.data.tracking || '');
         setConversionGoal(funnel.data.conversionGoal || 'Product Purchase');
