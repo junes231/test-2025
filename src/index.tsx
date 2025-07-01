@@ -13,7 +13,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDHBf2aP49nxmxHS3DuZsDOhofvECOkM-g",
   authDomain: "myfunneleditorapp.firebaseapp.com",
   projectId: "myfunneleditorapp",
-  storageBucket: "myfunneleditorapp.firebasestorage.app",
+  storageBucket: "myfunneleditorapp.appspot.com",
   messagingSenderId: "132054308840",
   appId: "1:132054308840:web:3ab09ebc8e73522836765d",
   measurementId: "G-RVRL76REP7"
@@ -34,4 +34,3 @@ root.render(
     </HashRouter>
   </React.StrictMode>
 );
-
