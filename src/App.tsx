@@ -38,17 +38,15 @@ interface FunnelData {
 }
 
 interface Funnel {
-  id: string; // Document ID in Firestore
-  name: string; // Funnel name
+  id: string;
+  name: string;
   data: FunnelData;
 }
 
-// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
 
-// Default values for funnel data, including colors
 const defaultFunnelData: FunnelData = {
   questions: [],
   finalRedirectLink: '',
@@ -176,16 +174,15 @@ interface FunnelDashboardProps {
 const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true); // NEW: Loading state
-  const [error, setError] = useState<string | null>(null); // NEW: Error state
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Re-fetch funnels on mount and when create/delete happens
   useEffect(() => {
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const funnelsCollectionRef = collection(db, 'funnels'); // Ensure db is in scope or passed
+        const funnelsCollectionRef = collection(db, 'funnels');
         const data = await getDocs(funnelsCollectionRef);
         const loadedFunnels = data.docs.map((doc) => {
           const docData = doc.data() as Partial<Funnel>;
@@ -205,14 +202,14 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
       }
     };
     fetchFunnels();
-  }, [createFunnel, deleteFunnel]); // Depend on create/delete to re-fetch after these actions
+  }, [createFunnel, deleteFunnel]);
 
-  const handleCreateFunnel = async () => { // Make async to await createFunnel
+  const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
       return;
     }
-    setIsLoading(true); // Show loading when creating
+    setIsLoading(true);
     try {
       await createFunnel(newFunnelName);
       setNewFunnelName('');
@@ -223,8 +220,8 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
     }
   };
 
-  const handleDeleteFunnel = async (funnelId: string) => { // Make async to await deleteFunnel
-    setIsLoading(true); // Show loading when deleting
+  const handleDeleteFunnel = async (funnelId: string) => {
+    setIsLoading(true);
     try {
       await deleteFunnel(funnelId);
     } catch (err) {
@@ -284,7 +281,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
   );
 };
 
-// FunnelEditor (now for editing a specific funnel's quiz & links)
 interface FunnelEditorProps {
   db: Firestore;
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
@@ -299,7 +295,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
   const [tracking, setTracking] = useState('');
   const [conversionGoal, setConversionGoal] = useState('Product Purchase');
-  // States for colors
   const [primaryColor, setPrimaryColor] = useState(defaultFunnelData.primaryColor);
   const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
   const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
@@ -307,56 +302,38 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
-  const [isLoading, setIsLoading] = useState(true); // NEW: Loading state for editor
-  const [error, setError] = useState<string | null>(null); // NEW: Error state for editor
 
-  // NEW: State to display debug info on screen
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
 
 
-  // Load specific funnel data when component mounts or funnelId changes
   useEffect(() => {
     const getFunnel = async () => {
-      if (!funnelId) {
-        setError("No funnel ID provided in URL.");
-        setIsLoading(false);
-        return;
-      }
-      setIsLoading(true);
-      setError(null);
-      try {
-        const funnelDocRef = doc(db, 'funnels', funnelId);
-        const funnelDoc = await getDoc(funnelDocRef);
-        if (funnelDoc.exists()) {
-          const funnel = funnelDoc.data() as Funnel;
-          setFunnelName(funnel.name);
-          setQuestions(funnel.data.questions || defaultFunnelData.questions);
-          setFinalRedirectLink(funnel.data.finalRedirectLink || defaultFunnelData.finalRedirectLink);
-          setTracking(funnel.data.tracking || defaultFunnelData.tracking);
-          setConversionGoal(funnel.data.conversionGoal || defaultFunnelData.conversionGoal);
-          setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
-          setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
-          setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
-          setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
+      if (!funnelId) return;
+      const funnelDocRef = doc(db, 'funnels', funnelId);
+      const funnelDoc = await getDoc(funnelDocRef);
+      if (funnelDoc.exists()) {
+        const funnel = funnelDoc.data() as Funnel;
+        setFunnelName(funnel.name);
+        setQuestions(funnel.data.questions || defaultFunnelData.questions);
+        setFinalRedirectLink(funnel.data.finalRedirectLink || defaultFunnelData.finalRedirectLink);
+        setTracking(funnel.data.tracking || defaultFunnelData.tracking);
+        setConversionGoal(funnel.data.conversionGoal || defaultFunnelData.conversionGoal);
+        setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
+        setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
+        setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
+        setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
 
-          const loadedLink = funnel.data.finalRedirectLink || 'Empty';
-          setDebugLinkValue(`Loaded: ${loadedLink}`);
-          console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", loadedLink);
-        } else {
-          setError('Funnel not found! Please check the link or create a new one.');
-          navigate('/'); // Go back to dashboard
-        }
-      } catch (err) {
-        console.error("Error loading funnel in editor:", err);
-        setError("Failed to load funnel data. Check your internet connection and Firebase rules.");
-      } finally {
-        setIsLoading(false);
+        const loadedLink = funnel.data.finalRedirectLink || 'Empty';
+        setDebugLinkValue(`Loaded: ${loadedLink}`);
+        console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", loadedLink);
+      } else {
+        alert('Funnel not found!');
+        navigate('/');
       }
     };
     getFunnel();
   }, [funnelId, db, navigate]);
 
-  // Save funnel data to Firestore whenever relevant states change
   const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
     const newData: FunnelData = {
@@ -415,7 +392,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const handleQuestionFormSave = (updatedQuestion: Question) => {
-    if (!updatedQuestion.title.trim()) { // Ensure title is not empty on save
+    if (!updatedQuestion.title.trim()) {
       alert('Question title cannot be empty!');
       return;
     }
@@ -424,7 +401,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         alert('Please provide at least one answer option.');
         return;
     }
-    updatedQuestion.answers = filteredAnswers; // Update answers with filtered ones
+    updatedQuestion.answers = filteredAnswers;
 
     if (selectedQuestionIndex !== null) {
       const updatedQuestions = questions.map((q, i) =>
@@ -444,24 +421,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const renderEditorContent = () => {
-    if (isLoading) {
-      return (
-        <div className="dashboard-container">
-          <p className="loading-message">Loading funnel data...</p>
-        </div>
-      );
-    }
-    if (error) {
-      return (
-        <div className="dashboard-container">
-          <p className="error-message">{error}</p>
-          <button className="back-button" onClick={() => navigate('/')}>
-            <span role="img" aria-label="back">←</span> Back to All Funnels
-          </button>
-        </div>
-      );
-    }
-
     switch (currentSubView) {
       case 'quizEditorList':
         return (
@@ -557,8 +516,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [clickedAnswerIndex, setClickedAnswerIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // NEW: Loading state for player
-  const [error, setError] = useState<string | null>(null); // NEW: Error state for player
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -580,12 +539,10 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           console.log("QuizPlayer: Loaded finalRedirectLink for play:", funnel.data.finalRedirectLink);
         } else {
           setError('Funnel not found! Please check the link or contact the funnel creator.');
-          // navigate('/'); // Do not navigate if funnel not found, let error message show
         }
       } catch (err) {
         console.error("Error loading funnel for play:", err);
         setError("Failed to load quiz. Please check your internet connection and Firebase rules.");
-        // navigate('/'); // Do not navigate on error, let error message show
       } finally {
         setIsLoading(false);
       }
@@ -594,7 +551,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   }, [funnelId, db, navigate]);
 
   const handleAnswerClick = (answerIndex: number) => {
-    if (isAnimating || !funnelData) return; // Prevent clicks during animation or if data not loaded
+    if (isAnimating || !funnelData) return;
 
     setIsAnimating(true);
     setClickedAnswerIndex(answerIndex);
@@ -621,9 +578,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       if (currentQuestionIndex < funnelData.questions.length - 1) {
         setCurrentQuestionIndex(currentQuestionIndex + 1);
       } else {
-        // This is the fallback path if not enough questions are set up or last question of a short quiz
-        alert('Quiz complete! No more questions.'); // Changed alert message
-        // navigate('/'); // Do not navigate back to editor, just show complete message
+        alert('Quiz complete! No more questions.');
       }
     }, 500);
   };
@@ -642,7 +597,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       <div className="quiz-player-container">
         <h2>Error Loading Quiz</h2>
         <p className="error-message">{error}</p>
-        {/* No back button for customer facing page */}
       </div>
     );
   }
@@ -652,7 +606,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       <div className="quiz-player-container">
         <h2>Quiz Not Ready</h2>
         <p>This funnel either has no questions or fewer than the required 6 questions. Please contact the funnel creator.</p>
-        {/* No back button for customer facing page */}
       </div>
     );
   }
@@ -696,7 +649,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           </button>
         ))}
       </div>
-      {/* Removed the Back to Home button from QuizPlayer */}
     </div>
   );
 };
@@ -779,6 +731,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
         alert('Please provide at least one answer option.');
         return;
     }
+    updatedQuestion.answers = filteredAnswers;
 
     onSave({
       id: question?.id || Date.now().toString(),
