@@ -43,7 +43,6 @@ interface Funnel {
   data: FunnelData;
 }
 
-// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
@@ -174,81 +173,83 @@ interface FunnelDashboardProps {
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({
-  funnels,
-  createFunnel,
-  deleteFunnel,
-  isLoading,
-  error
-}) => {
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
 
-  const handleCreateFunnel = async () => {
-    if (!newFunnelName.trim()) {
-      alert('Please enter a funnel name.');
-      return;
-    }
-    await createFunnel(newFunnelName);
-    setNewFunnelName('');
-  };
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
-  const handleCopyLink = (funnelId: string) => {
-    const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-    const link = `${baseUrl}#/play/${funnelId}`;
+    const fetchFunnels = async () => {
+      setIsLoading(true);
+      setError(null);
+      console.log(`FunnelDashboard: Attempting to fetch funnels (Retry ${retryCount + 1}). db instance:`, db);
+      
+      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = "Firebase Firestore functions not yet loaded or db not fully initialized.";
+        console.warn("FunnelDashboard:", errMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            fetchFunnels();
+          }, 1000 * (retryCount + 1));
+        } else {
+          setError("CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.");
+          setIsLoading(false);
+        }
+        return;
+      }
+      
+      try {
+        const funnelsCollectionRef = collection(db, 'funnels');
+        const data = await getDocs(funnelsCollectionRef);
+        const loadedFunnels = data.docs.map((doc) => {
+          const docData = doc.data() as Partial<Funnel>;
+          const funnelWithDefaultData: Funnel = {
+            ...(docData as Funnel),
+            id: doc.id,
+            data: { ...defaultFunnelData, ...docData.data },
+          };
+          return funnelWithDefaultData;
+        });
+        setFunnels(loadedFunnels);
+        console.log("FunnelDashboard: Successfully loaded funnels.");
+        setRetryCount(0);
+      } catch (err: any) {
+        console.error("Error fetching funnels in dashboard:", err);
+        let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
+        if (err.code === 'permission-denied') {
+            errorMessage = "Permission denied. Please check your Firebase Firestore security rules (should be 'allow read, write: if true;').";
+        } else if (err.message && err.message.includes("Firebase: No Firebase App")) {
+            errorMessage = "Firebase App not initialized. Check your Firebase config in index.tsx.";
+        } else if (err.message) {
+            errorMessage = `Failed to load funnels: ${err.message}.`;
+        }
+        setError(errorMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            fetchFunnels();
+          }, 1000 * (retryCount + 1));
+        } else {
+          setError(errorMessage + " Max retries reached.");
+        }
+      } finally {
+        if (retryCount >= MAX_RETRIES || error) {
+           setIsLoading(false);
+        }
+      }
+    };
+    fetchFunnels();
 
-    navigator.clipboard.writeText(link)
-      .then(() => alert("Link copied to clipboard!"))
-      .catch(err => {
-        console.error("Failed to copy link:", err);
-        alert("Failed to copy link.");
-      });
-  };
+    return () => clearTimeout(timeoutId);
+  }, [db, createFunnel, deleteFunnel, retryCount]);
 
-  return (
-    <div className="dashboard-container">
-      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
-      <div className="create-funnel-section">
-        <input
-          type="text"
-          placeholder="New Funnel Name"
-          value={newFunnelName}
-          onChange={(e) => setNewFunnelName(e.target.value)}
-          className="funnel-name-input"
-          disabled={isLoading}
-        />
-        <button className="add-button" onClick={handleCreateFunnel} disabled={isLoading}>
-          <span role="img" aria-label="add">➕</span> Create New Funnel
-        </button>
-      </div>
 
-      {isLoading ? (
-        <p className="loading-message">Loading funnels...</p>
-      ) : error ? (
-        <p className="error-message">{error}</p>
-      ) : funnels.length === 0 ? (
-        <p className="no-funnels-message">No funnels created yet. Start by creating one!</p>
-      ) : (
-        <ul className="funnel-list">
-          {funnels.map((funnel) => (
-            <li key={funnel.id} className="funnel-item">
-              <span>{funnel.name}</span>
-              <div className="funnel-actions">
-                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>Edit</button>
-                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>Play</button>
-                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>Copy Link</button>
-                <button className="button-link delete-button" onClick={() => deleteFunnel(funnel.id)}>Delete</button>
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-};
-
-    
-export default FunnelDashboard;
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
@@ -275,6 +276,8 @@ export default FunnelDashboard;
       setIsLoading(false);
     }
   };
+
+
   return (
     <div className="dashboard-container">
       <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
@@ -797,7 +800,7 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
           ref={fileInputRef}
           onChange={handleFileChange}
           accept=".json"
-          style={{ display: 'none' }}
+          style={{ display: 'none" }}
         />
       </div>
 
