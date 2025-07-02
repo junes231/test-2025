@@ -65,7 +65,8 @@ const defaultFunnelData: FunnelData = {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
 
   const getFunnels = useCallback(async () => {
-  try {
+   const funnelsCollectionRef = collection(db, 'funnels');
+    try {
     const data = await getDocs(funnelsCollectionRef);
     const loadedFunnels = data.docs.map((doc) => {
       const docData = doc.data() as Partial<Funnel>;
@@ -121,6 +122,7 @@ const defaultFunnelData: FunnelData = {
 
   const createFunnel = async (name: string) => {
     try {
+     const funnelsCollectionRef = collection(db, 'funnels');
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
