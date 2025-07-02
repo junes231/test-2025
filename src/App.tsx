@@ -205,8 +205,8 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
   };
 
   const handleCopyLink = (funnelId: string) => {
-  const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
-  const link = `${baseUrl}#/play/${funnelId}`;
+  const baseUrl = `${window.location.origin}/funnel-editor`;
+  const link = `${baseUrl}/play/${funnelId}`;
 
   navigator.clipboard.writeText(link)
     .then(() => alert("Link copied to clipboard!"))
