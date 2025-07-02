@@ -27,7 +27,6 @@ const db = getFirestore(app);
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 // Render the application
-import { HashRouter } from 'react-router-dom';
 
 root.render(
   <React.StrictMode>
