@@ -118,8 +118,8 @@ export default function App({ db }: AppProps) {
   }, [funnelsCollectionRef]);
 
   useEffect(() => {
-    getFunnels();
-  }, [getFunnels]);
+  getFunnels();
+  }, []);
 
   const createFunnel = useCallback(async (name: string) => {
     try {
