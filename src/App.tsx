@@ -179,80 +179,115 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0); // NEW: Retry counter
-  const MAX_RETRIES = 5; // NEW: Max retries
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout; // For cleanup
+    let timeoutId: NodeJS.Timeout;
+    let retrying = false;
 
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
-      console.log(`FunnelDashboard: Attempting to fetch funnels (Retry ${retryCount + 1}). db instance:`, db);
-      
-      // NEW: More robust check for Firebase SDK readiness
+
       if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
-        const errMessage = "Firebase Firestore functions not yet loaded or db not fully initialized.";
-        console.warn("FunnelDashboard:", errMessage);
         if (retryCount < MAX_RETRIES) {
-          timeoutId = setTimeout(() => { // Retry after delay
+          retrying = true;
+          timeoutId = setTimeout(() => {
             setRetryCount(prev => prev + 1);
-            fetchFunnels();
-          }, 1000 * (retryCount + 1)); // Exponential backoff
+          }, 1000 * (retryCount + 1));
         } else {
-          setError("Failed to initialize Firebase. Please refresh or check Firebase config in index.tsx.");
+          setError("Failed to initialize Firebase. Please refresh or check Firebase config.");
           setIsLoading(false);
         }
         return;
       }
-      
+
       try {
         const funnelsCollectionRef = collection(db, 'funnels');
         const data = await getDocs(funnelsCollectionRef);
         const loadedFunnels = data.docs.map((doc) => {
           const docData = doc.data() as Partial<Funnel>;
-          const funnelWithDefaultData: Funnel = {
+          return {
             ...(docData as Funnel),
             id: doc.id,
             data: { ...defaultFunnelData, ...docData.data },
           };
-          return funnelWithDefaultData;
         });
         setFunnels(loadedFunnels);
-        console.log("FunnelDashboard: Successfully loaded funnels.");
-        setRetryCount(0); // Reset retry count on success
+        setRetryCount(0);
       } catch (err: any) {
-        console.error("Error fetching funnels in dashboard:", err);
-        let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
-        if (err.code === 'permission-denied') {
-            errorMessage = "Permission denied. Please check your Firebase Firestore security rules (should be 'allow read, write: if true;').";
-        } else if (err.message && err.message.includes("Firebase: No Firebase App")) {
-            errorMessage = "Firebase App not initialized. Check your Firebase config in index.tsx.";
-        } else if (err.message) {
-            errorMessage = `Failed to load funnels: ${err.message}.`;
-        }
-        setError(errorMessage);
-        if (retryCount < MAX_RETRIES) { // Retry on fetch error too
+        let message = err.message || "Unknown error";
+        setError("Failed to load funnels: " + message);
+        if (retryCount < MAX_RETRIES) {
+          retrying = true;
           timeoutId = setTimeout(() => {
             setRetryCount(prev => prev + 1);
-            fetchFunnels();
           }, 1000 * (retryCount + 1));
-        } else {
-          setError(errorMessage + " Max retries reached.");
         }
       } finally {
-        // Only set isLoading to false if not retrying
-        if (retryCount >= MAX_RETRIES || error) { // If max retries reached or an error is set
-           setIsLoading(false);
+        if (!retrying) {
+          setIsLoading(false);
         }
       }
     };
+
     fetchFunnels();
+    return () => clearTimeout(timeoutId);
+  }, [db, createFunnel, deleteFunnel, retryCount]);
 
-    return () => clearTimeout(timeoutId); // Cleanup timeout on unmount
-  }, [db, createFunnel, deleteFunnel, retryCount]); // Add retryCount to dependencies
+  const handleCreateFunnel = async () => {
+    if (!newFunnelName.trim()) {
+      alert('Please enter a funnel name.');
+      return;
+    }
+    await createFunnel(newFunnelName);
+    setNewFunnelName('');
+  };
 
+  return (
+    <div className="dashboard-container">
+      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
+      <div className="create-funnel-section">
+        <input
+          type="text"
+          placeholder="New Funnel Name"
+          value={newFunnelName}
+          onChange={(e) => setNewFunnelName(e.target.value)}
+          className="funnel-name-input"
+          disabled={isLoading}
+        />
+        <button className="add-button" onClick={handleCreateFunnel} disabled={isLoading}>
+          <span role="img" aria-label="add">➕</span> Create New Funnel
+        </button>
+      </div>
 
+      {isLoading ? (
+        <p className="loading-message">Loading funnels...</p>
+      ) : error ? (
+        <p className="error-message">{error}</p>
+      ) : funnels.length === 0 ? (
+        <p className="no-funnels-message">No funnels created yet. Start by creating one!</p>
+      ) : (
+        <ul className="funnel-list">
+          {funnels.map((funnel) => (
+            <li key={funnel.id} className="funnel-item">
+              <span>{funnel.name}</span>
+              <div className="funnel-actions">
+                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>Edit</button>
+                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>Play</button>
+                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>Copy Link</button>
+                <button className="button-link delete-button" onClick={() => deleteFunnel(funnel.id)}>Delete</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+};
+
+export default FunnelDashboard;
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
