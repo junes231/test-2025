@@ -112,19 +112,20 @@ const defaultFunnelData: FunnelData = {
       data: migratedFunnelData,
     });
     localStorage.setItem('hasMigratedToFirestore', 'true');
-    alert('Old quiz data migrated to Firestore! Please refresh.');
-    window.location.reload();
-  };
+          alert('Old quiz data migrated to Firestore! Please refresh.');
+          window.location.reload();
+        };
 
-  migrateData(); 
-}
-
-      setFunnels(loadedFunnels);
-    } catch (error) {
-      console.error("Error fetching funnels:", error);
-      alert("Failed to load funnels from database. Check console for details.");
+        await migrateData(); 
+      }
     }
-  }, [funnelsCollectionRef]);
+
+    setFunnels(loadedFunnels);
+  } catch (error) {
+    console.error("Error fetching funnels:", error);
+    alert("Failed to load funnels from database. Check console for details.");
+  }
+}, [funnelsCollectionRef]);
 
   useEffect(() => {
     getFunnels();
