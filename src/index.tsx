@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter } from 'react-router-dom';
+import { HashRouter } from 'react-router-dom';
 import App from './App.tsx';
 import './index.css';
 
@@ -27,12 +27,12 @@ const db = getFirestore(app);
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 // Render the application
+import { HashRouter } from 'react-router-dom';
+
 root.render(
-  render(
   <React.StrictMode>
     <HashRouter basename="/funnel-editor">
       <App db={db} />
     </HashRouter>
   </React.StrictMode>
 );
-
