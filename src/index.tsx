@@ -28,10 +28,11 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 // Render the application
 root.render(
+  render(
   <React.StrictMode>
-    <BrowserRouter basename="/funnel-editor">
+    <HashRouter basename="/funnel-editor">
       <App db={db} />
-    </BrowserRouter>
+    </HashRouter>
   </React.StrictMode>
 );
 
