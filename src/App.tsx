@@ -205,14 +205,16 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
   };
 
   const handleCopyLink = (funnelId: string) => {
-    const link = `${window.location.origin}${window.location.pathname.replace(/\/$/, '')}/play/${funnelId}`;
-    navigator.clipboard.writeText(link).then(() => {
-        alert('Link copied to clipboard!');
-    }).catch(err => {
-        console.error('Failed to copy link: ', err);
-        alert('Failed to copy link.');
+  const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
+  const link = `${baseUrl}#/play/${funnelId}`;
+
+  navigator.clipboard.writeText(link)
+    .then(() => alert("Link copied to clipboard!"))
+    .catch(err => {
+      console.error("Failed to copy link:", err);
+      alert("Failed to copy link.");
     });
-  };
+};
 
   return (
     <div className="dashboard-container">
