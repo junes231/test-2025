@@ -97,21 +97,27 @@ const defaultFunnelData: FunnelData = {
         const parsedOldQuestions: Question[] = JSON.parse(oldQuizQuestions);
         const parsedOldLinks = JSON.parse(oldAffiliateLinks);
 
-        if (parsedOldQuestions.length > 0) {
-          console.log("Migrating old local storage data to Firestore...");
-          const migratedFunnelData: FunnelData = {
-            ...defaultFunnelData,
-            questions: parsedOldQuestions,
-            finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
-            tracking: parsedOldLinks.tracking || '',
-            conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
-          };
-          await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: migratedFunnelData });
-          localStorage.setItem('hasMigratedToFirestore', 'true');
-          alert('Old quiz data migrated to Firestore! Please refresh.');
-          window.location.reload();
-        }
-      }
+      if (parsedOldQuestions.length > 0) {
+    const migrateData = async () => {
+    console.log("Migrating old local storage data to Firestore...");
+    const migratedFunnelData: FunnelData = {
+      ...defaultFunnelData,
+      questions: parsedOldQuestions,
+      finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
+      tracking: parsedOldLinks.tracking || '',
+      conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
+    };
+    await addDoc(funnelsCollectionRef, {
+      name: "Migrated Funnel (from LocalStorage)",
+      data: migratedFunnelData,
+    });
+    localStorage.setItem('hasMigratedToFirestore', 'true');
+    alert('Old quiz data migrated to Firestore! Please refresh.');
+    window.location.reload();
+  };
+
+  migrateData(); 
+}
 
       setFunnels(loadedFunnels);
     } catch (error) {
