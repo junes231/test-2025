@@ -43,6 +43,7 @@ interface Funnel {
   data: FunnelData;
 }
 
+// Props for the main App component, now accepting db from index.tsx
 interface AppProps {
   db: Firestore;
 }
@@ -178,19 +179,33 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0); // NEW: Retry counter
+  const MAX_RETRIES = 5; // NEW: Max retries
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout; // For cleanup
+
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
-      console.log("FunnelDashboard: Attempting to fetch funnels. db instance:", db);
-      if (!db || typeof collection !== 'function' || typeof getDocs !== 'function') {
-        const errMessage = "Firebase Firestore functions not yet loaded or db not initialized. Retrying...";
+      console.log(`FunnelDashboard: Attempting to fetch funnels (Retry ${retryCount + 1}). db instance:`, db);
+      
+      // NEW: More robust check for Firebase SDK readiness
+      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = "Firebase Firestore functions not yet loaded or db not fully initialized.";
         console.warn("FunnelDashboard:", errMessage);
-        setError(errMessage);
-        setTimeout(fetchFunnels, 500);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => { // Retry after delay
+            setRetryCount(prev => prev + 1);
+            fetchFunnels();
+          }, 1000 * (retryCount + 1)); // Exponential backoff
+        } else {
+          setError("Failed to initialize Firebase. Please refresh or check Firebase config in index.tsx.");
+          setIsLoading(false);
+        }
         return;
       }
+      
       try {
         const funnelsCollectionRef = collection(db, 'funnels');
         const data = await getDocs(funnelsCollectionRef);
@@ -205,6 +220,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
         });
         setFunnels(loadedFunnels);
         console.log("FunnelDashboard: Successfully loaded funnels.");
+        setRetryCount(0); // Reset retry count on success
       } catch (err: any) {
         console.error("Error fetching funnels in dashboard:", err);
         let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
@@ -216,12 +232,26 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
             errorMessage = `Failed to load funnels: ${err.message}.`;
         }
         setError(errorMessage);
+        if (retryCount < MAX_RETRIES) { // Retry on fetch error too
+          timeoutId = setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+            fetchFunnels();
+          }, 1000 * (retryCount + 1));
+        } else {
+          setError(errorMessage + " Max retries reached.");
+        }
       } finally {
-        setIsLoading(false);
+        // Only set isLoading to false if not retrying
+        if (retryCount >= MAX_RETRIES || error) { // If max retries reached or an error is set
+           setIsLoading(false);
+        }
       }
     };
     fetchFunnels();
-  }, [db, createFunnel, deleteFunnel]);
+
+    return () => clearTimeout(timeoutId); // Cleanup timeout on unmount
+  }, [db, createFunnel, deleteFunnel, retryCount]); // Add retryCount to dependencies
+
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
