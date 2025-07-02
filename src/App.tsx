@@ -275,8 +275,6 @@ export default FunnelDashboard;
       setIsLoading(false);
     }
   };
-
-
   return (
     <div className="dashboard-container">
       <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
