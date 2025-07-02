@@ -59,14 +59,19 @@ const defaultFunnelData: FunnelData = {
 };
 
 
-export default function App({ db }: AppProps) {
+  export default function App({ db }: AppProps) {
   const navigate = useNavigate();
 
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-  const funnelsCollectionRef = collection(db, 'funnels');
 
   const getFunnels = useCallback(async () => {
+    if (!db || !db.app) {
+      console.warn("Firestore db is not initialized.");
+      return;
+    }
+
     try {
+      const funnelsCollectionRef = collection(db, 'funnels');
       const data = await getDocs(funnelsCollectionRef);
       const loadedFunnels = data.docs.map((doc) => {
         const docData = doc.data() as Partial<Funnel>;
@@ -77,6 +82,12 @@ export default function App({ db }: AppProps) {
         };
         return funnelWithDefaultData;
       });
+      setFunnels(loadedFunnels);
+    } catch (error) {
+      console.error("Error loading funnels:", error);
+    }
+  }, [db]);
+        
 
       const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
       const oldQuizQuestions = localStorage.getItem('quizQuestions');
