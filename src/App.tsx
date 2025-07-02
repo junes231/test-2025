@@ -795,7 +795,7 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
           ref={fileInputRef}
           onChange={handleFileChange}
           accept=".json"
-          style={{ display: 'none" }}
+          style={{ display: "none" }}
         />
       </div>
 
