@@ -65,58 +65,46 @@ const defaultFunnelData: FunnelData = {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
 
   const getFunnels = useCallback(async () => {
-    if (!db || !db.app) {
-      console.warn("Firestore db is not initialized.");
-      return;
-    }
+  try {
+    const data = await getDocs(funnelsCollectionRef);
+    const loadedFunnels = data.docs.map((doc) => {
+      const docData = doc.data() as Partial<Funnel>;
+      const funnelWithDefaultData: Funnel = {
+        ...(docData as Funnel),
+        id: doc.id,
+        data: { ...defaultFunnelData, ...docData.data },
+      };
+      return funnelWithDefaultData;
+    });
 
-    try {
-      const funnelsCollectionRef = collection(db, 'funnels');
-      const data = await getDocs(funnelsCollectionRef);
-      const loadedFunnels = data.docs.map((doc) => {
-        const docData = doc.data() as Partial<Funnel>;
-        const funnelWithDefaultData: Funnel = {
-          ...(docData as Funnel),
-          id: doc.id,
-          data: { ...defaultFunnelData, ...docData.data },
-        };
-        return funnelWithDefaultData;
-      });
-      setFunnels(loadedFunnels);
-    } catch (error) {
-      console.error("Error loading funnels:", error);
-    }
-  }, [db]);
-        
+    
+    const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
+    const oldQuestions = localStorage.getItem('questions');
+    const oldLinks = localStorage.getItem('finalRedirectData');
 
-      const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
-      const oldQuizQuestions = localStorage.getItem('quizQuestions');
-      const oldAffiliateLinks = localStorage.getItem('affiliateLinks');
-
-      if (!hasMigrated && oldQuizQuestions && oldAffiliateLinks) {
-        const parsedOldQuestions: Question[] = JSON.parse(oldQuizQuestions);
-        const parsedOldLinks = JSON.parse(oldAffiliateLinks);
+    if (!hasMigrated && oldQuestions && oldLinks) {
+      const parsedOldQuestions = JSON.parse(oldQuestions);
+      const parsedOldLinks = JSON.parse(oldLinks);
 
       if (parsedOldQuestions.length > 0) {
-    const migrateData = async () => {
-    console.log("Migrating old local storage data to Firestore...");
-    const migratedFunnelData: FunnelData = {
-      ...defaultFunnelData,
-      questions: parsedOldQuestions,
-      finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
-      tracking: parsedOldLinks.tracking || '',
-      conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
-    };
-    await addDoc(funnelsCollectionRef, {
-      name: "Migrated Funnel (from LocalStorage)",
-      data: migratedFunnelData,
-    });
-    localStorage.setItem('hasMigratedToFirestore', 'true');
-          alert('Old quiz data migrated to Firestore! Please refresh.');
-          window.location.reload();
+        console.log("Migrating old local storage data to Firestore...");
+
+        const migratedFunnelData: FunnelData = {
+          ...defaultFunnelData,
+          questions: parsedOldQuestions,
+          finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
+          tracking: parsedOldLinks.tracking || '',
+          conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
         };
 
-        
+        await addDoc(funnelsCollectionRef, {
+          name: "Migrated Funnel (from LocalStorage)",
+          data: migratedFunnelData,
+        });
+
+        localStorage.setItem('hasMigratedToFirestore', 'true');
+        alert('Old quiz data migrated to Firestore! Please refresh.');
+        window.location.reload();
       }
     }
 
