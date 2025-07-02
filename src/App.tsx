@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
-import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
+import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
   doc,
@@ -9,6 +9,7 @@ import {
   deleteDoc,
   Firestore,
   query,
+  where,
   getDoc
 } from 'firebase/firestore';
 import './App.css';
@@ -57,27 +58,24 @@ const defaultFunnelData: FunnelData = {
   textColor: '#333333',
 };
 
+
 export default function App({ db }: AppProps) {
   const navigate = useNavigate();
 
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
   const funnelsCollectionRef = collection(db, 'funnels');
 
   const getFunnels = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
     try {
       const data = await getDocs(funnelsCollectionRef);
-      let loadedFunnels = data.docs.map((doc) => {
+      const loadedFunnels = data.docs.map((doc) => {
         const docData = doc.data() as Partial<Funnel>;
-        return {
+        const funnelWithDefaultData: Funnel = {
           ...(docData as Funnel),
           id: doc.id,
           data: { ...defaultFunnelData, ...docData.data },
         };
+        return funnelWithDefaultData;
       });
 
       const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
@@ -86,8 +84,10 @@ export default function App({ db }: AppProps) {
 
       if (!hasMigrated && oldQuizQuestions && oldAffiliateLinks) {
         const parsedOldQuestions: Question[] = JSON.parse(oldQuizQuestions);
+        const parsedOldLinks = JSON.parse(oldAffiliateLinks);
+
         if (parsedOldQuestions.length > 0) {
-          const parsedOldLinks = JSON.parse(oldAffiliateLinks);
+          console.log("Migrating old local storage data to Firestore...");
           const migratedFunnelData: FunnelData = {
             ...defaultFunnelData,
             questions: parsedOldQuestions,
@@ -95,87 +95,70 @@ export default function App({ db }: AppProps) {
             tracking: parsedOldLinks.tracking || '',
             conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
           };
-
-          const newDocRef = await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: migratedFunnelData });
+          await addDoc(funnelsCollectionRef, { name: "Migrated Funnel (from LocalStorage)", data: migratedFunnelData });
           localStorage.setItem('hasMigratedToFirestore', 'true');
-          
-          const migratedFunnel: Funnel = {
-              id: newDocRef.id,
-              name: "Migrated Funnel (from LocalStorage)",
-              data: migratedFunnelData
-          };
-          loadedFunnels = [...loadedFunnels, migratedFunnel];
+          alert('Old quiz data migrated to Firestore! Please refresh.');
+          window.location.reload();
         }
       }
 
       setFunnels(loadedFunnels);
-    } catch (err: any) {
-      console.error("Error fetching funnels:", err);
-      setError("Failed to load funnels from database. Check console for details.");
-    } finally {
-      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching funnels:", error);
+      alert("Failed to load funnels from database. Check console for details.");
     }
   }, [funnelsCollectionRef]);
 
   useEffect(() => {
-  getFunnels();
-  }, []);
+    getFunnels();
+  }, [getFunnels]);
 
-  const createFunnel = useCallback(async (name: string) => {
+  const createFunnel = async (name: string) => {
     try {
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
       });
       alert(`Funnel "${name}" created!`);
-      await getFunnels();
+      getFunnels();
       navigate(`/edit/${newFunnelRef.id}`);
     } catch (error) {
       console.error("Error creating funnel:", error);
       alert("Failed to create funnel. Check console for details.");
     }
-  }, [funnelsCollectionRef, getFunnels, navigate]);
+  };
 
-  const deleteFunnel = useCallback(async (funnelId: string) => {
+  const deleteFunnel = async (funnelId: string) => {
     if (window.confirm("Are you sure you want to delete this funnel? This action cannot be undone.")) {
       try {
         const funnelDoc = doc(db, 'funnels', funnelId);
         await deleteDoc(funnelDoc);
         alert('Funnel deleted!');
-        await getFunnels();
+        getFunnels();
         navigate('/');
       } catch (error) {
         console.error("Error deleting funnel:", error);
         alert("Failed to delete funnel. Check console for details.");
       }
     }
-  }, [db, getFunnels, navigate]);
+  };
 
-  const updateFunnelData = useCallback(async (funnelId: string, newData: FunnelData) => {
+  const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
     try {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
-      await getFunnels();
+      console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
+      alert('Funnel data saved to cloud!');
+      getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
       alert("Failed to save funnel data to cloud. Check console for details.");
     }
-  }, [db, getFunnels]);
+  };
 
   return (
     <Routes>
-      <Route
-        path="/"
-        element={
-          <FunnelDashboard
-            funnels={funnels}
-            createFunnel={createFunnel}
-            deleteFunnel={deleteFunnel}
-            isLoading={isLoading}
-            error={error}
-          />
-        }
-      />
+      <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
       <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
       <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
       <Route path="*" element={<h2>404 Not Found</h2>} />
@@ -184,37 +167,89 @@ export default function App({ db }: AppProps) {
 }
 
 interface FunnelDashboardProps {
+  db: Firestore;
   funnels: Funnel[];
   createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
-  isLoading: boolean;
-  error: string | null;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel, deleteFunnel, isLoading, error }) => {
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFunnels = async () => {
+      setIsLoading(true);
+      setError(null);
+      console.log("FunnelDashboard: Attempting to fetch funnels. db instance:", db);
+      if (!db || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = "Firebase Firestore functions not yet loaded or db not initialized. Retrying...";
+        console.warn("FunnelDashboard:", errMessage);
+        setError(errMessage);
+        setTimeout(fetchFunnels, 500);
+        return;
+      }
+      try {
+        const funnelsCollectionRef = collection(db, 'funnels');
+        const data = await getDocs(funnelsCollectionRef);
+        const loadedFunnels = data.docs.map((doc) => {
+          const docData = doc.data() as Partial<Funnel>;
+          const funnelWithDefaultData: Funnel = {
+            ...(docData as Funnel),
+            id: doc.id,
+            data: { ...defaultFunnelData, ...docData.data },
+          };
+          return funnelWithDefaultData;
+        });
+        setFunnels(loadedFunnels);
+        console.log("FunnelDashboard: Successfully loaded funnels.");
+      } catch (err: any) {
+        console.error("Error fetching funnels in dashboard:", err);
+        let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
+        if (err.code === 'permission-denied') {
+            errorMessage = "Permission denied. Please check your Firebase Firestore security rules (should be 'allow read, write: if true;').";
+        } else if (err.message && err.message.includes("Firebase: No Firebase App")) {
+            errorMessage = "Firebase App not initialized. Check your Firebase config in index.tsx.";
+        } else if (err.message) {
+            errorMessage = `Failed to load funnels: ${err.message}.`;
+        }
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFunnels();
+  }, [db, createFunnel, deleteFunnel]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
       return;
     }
-    await createFunnel(newFunnelName);
-    setNewFunnelName('');
+    setIsLoading(true);
+    try {
+      await createFunnel(newFunnelName);
+      setNewFunnelName('');
+    } catch (err) {
+      setError("Failed to create funnel. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCopyLink = (funnelId: string) => {
-  const baseUrl = `${window.location.origin}/funnel-editor`;
-  const link = `${baseUrl}/play/${funnelId}`;
+  const handleDeleteFunnel = async (funnelId: string) => {
+    setIsLoading(true);
+    try {
+      await deleteFunnel(funnelId);
+    } catch (err) {
+      setError("Failed to delete funnel. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  navigator.clipboard.writeText(link)
-    .then(() => alert("Link copied to clipboard!"))
-    .catch(err => {
-      console.error("Failed to copy link:", err);
-      alert("Failed to copy link.");
-    });
-};
 
   return (
     <div className="dashboard-container">
@@ -226,7 +261,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
           value={newFunnelName}
           onChange={(e) => setNewFunnelName(e.target.value)}
           className="funnel-name-input"
-          disabled={isLoading}
         />
         <button className="add-button" onClick={handleCreateFunnel} disabled={isLoading}>
           <span role="img" aria-label="add">➕</span> Create New Funnel
@@ -245,10 +279,18 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ funnels, createFunnel
             <li key={funnel.id} className="funnel-item">
               <span>{funnel.name}</span>
               <div className="funnel-actions">
-                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>Edit</button>
-                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>Play</button>
-                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>Copy Link</button>
-                <button className="button-link delete-button" onClick={() => deleteFunnel(funnel.id)}>Delete</button>
+                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>
+                  Edit
+                </button>
+                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>
+                  Play
+                </button>
+                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>
+                  Copy Link
+                </button>
+                <button className="button-link delete-button" onClick={() => handleDeleteFunnel(funnel.id)}>
+                  Delete
+                </button>
               </div>
             </li>
           ))}
@@ -276,9 +318,12 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
   const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
   const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
+
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
+
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
+
 
   useEffect(() => {
     const getFunnel = async () => {
@@ -287,16 +332,19 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       const funnelDoc = await getDoc(funnelDocRef);
       if (funnelDoc.exists()) {
         const funnel = funnelDoc.data() as Funnel;
-        const funnelData = { ...defaultFunnelData, ...funnel.data };
         setFunnelName(funnel.name);
-        setQuestions(funnelData.questions || []);
-        setFinalRedirectLink(funnelData.finalRedirectLink || '');
-        setTracking(funnelData.tracking || '');
-        setConversionGoal(funnelData.conversionGoal || 'Product Purchase');
-        setPrimaryColor(funnelData.primaryColor);
-        setButtonColor(funnelData.buttonColor);
-        setBackgroundColor(funnelData.backgroundColor);
-        setTextColor(funnelData.textColor);
+        setQuestions(funnel.data.questions || []);
+        setFinalRedirectLink(funnel.data.finalRedirectLink || '');
+        setTracking(funnel.data.tracking || '');
+        setConversionGoal(funnel.data.conversionGoal || 'Product Purchase');
+        setPrimaryColor(funnel.data.primaryColor || defaultFunnelData.primaryColor);
+        setButtonColor(funnel.data.buttonColor || defaultFunnelData.buttonColor);
+        setBackgroundColor(funnel.data.backgroundColor || defaultFunnelData.backgroundColor);
+        setTextColor(funnel.data.textColor || defaultFunnelData.textColor);
+
+        const loadedLink = funnel.data.finalRedirectLink || 'Empty';
+        setDebugLinkValue(`Loaded: ${loadedLink}`);
+        console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", loadedLink);
       } else {
         alert('Funnel not found!');
         navigate('/');
@@ -308,9 +356,17 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
     const newData: FunnelData = {
-      questions, finalRedirectLink, tracking, conversionGoal,
-      primaryColor, buttonColor, backgroundColor, textColor,
+      questions,
+      finalRedirectLink,
+      tracking,
+      conversionGoal,
+      primaryColor,
+      buttonColor,
+      backgroundColor,
+      textColor,
     };
+    setDebugLinkValue(`Saving: ${finalRedirectLink || 'Empty'}`);
+    console.log("FunnelEditor: Saving finalRedirectLink to Firestore:", finalRedirectLink);
     updateFunnelData(funnelId, newData);
   }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
       primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
@@ -320,7 +376,9 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       saveFunnelToFirestore();
     }, 1000);
     return () => clearTimeout(handler);
-  }, [saveFunnelToFirestore]);
+  }, [questions, finalRedirectLink, tracking, conversionGoal,
+      primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
+
 
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
@@ -359,46 +417,22 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
     const filteredAnswers = updatedQuestion.answers.filter(ans => ans.text.trim() !== '');
     if (filteredAnswers.length === 0) {
-      alert('Please provide at least one answer option.');
-      return;
+        alert('Please provide at least one answer option.');
+        return;
     }
     updatedQuestion.answers = filteredAnswers;
-    
-    setQuestions(prevQuestions => {
-        const newQuestions = [...prevQuestions];
-        if (selectedQuestionIndex !== null) {
-            newQuestions[selectedQuestionIndex] = updatedQuestion;
-        }
-        return newQuestions;
-    });
 
-    setCurrentSubView('quizEditorList');
-    setSelectedQuestionIndex(null);
+    onSave({
+      id: question?.id || Date.now().toString(),
+      title: updatedQuestion.title,
+      type: 'single-choice',
+      answers: filteredAnswers,
+    });
   };
-  
+
   const handleQuestionFormCancel = () => {
     setSelectedQuestionIndex(null);
     setCurrentSubView('quizEditorList');
-  };
-
-  const handleImportQuestions = (importedQuestions: Question[]) => {
-    if (questions.length + importedQuestions.length > 6) {
-      alert(`Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`);
-      return;
-    }
-    const validImportedQuestions = importedQuestions.filter(q => 
-        q.title && typeof q.title === 'string' && q.title.trim() !== '' && 
-        Array.isArray(q.answers) && q.answers.length > 0 &&
-        q.answers.every(a => a.text && typeof a.text === 'string' && a.text.trim() !== '')
-    );
-
-    if (validImportedQuestions.length === 0) {
-        alert('No valid questions found in the imported file. Please check the file format (title and answer text are required).');
-        return;
-    }
-
-    setQuestions(prevQuestions => [...prevQuestions, ...validImportedQuestions]);
-    alert(`Successfully imported ${validImportedQuestions.length} questions!`);
   };
 
   const renderEditorContent = () => {
@@ -446,26 +480,31 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             onBack={() => setCurrentSubView('mainEditorDashboard')}
           />
         );
-      default:
+      default: // mainEditorDashboard
         return (
           <div className="dashboard-container">
             <h2><span role="img" aria-label="funnel">🥞</span> {funnelName} Editor</h2>
             <p>Manage components for this funnel.</p>
+
             <div className="dashboard-card" onClick={() => setCurrentSubView('quizEditorList')}>
               <h3><span role="img" aria-label="quiz">📝</span> Interactive Quiz Builder</h3>
               <p>Manage quiz questions for this funnel.</p>
             </div>
+
             <div className="dashboard-card" onClick={() => setCurrentSubView('linkSettings')}>
               <h3><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h3>
               <p>Configure the custom link where users will be redirected.</p>
             </div>
+
             <div className="dashboard-card" onClick={() => setCurrentSubView('colorCustomizer')}>
               <h3><span role="img" aria-label="palette">🎨</span> Color Customization</h3>
               <p>Customize theme colors for this funnel.</p>
             </div>
+
             <button className="back-button" onClick={() => navigate('/')}>
               <span role="img" aria-label="back">←</span> Back to All Funnels
             </button>
+            {/* Debugging info for finalRedirectLink */}
             <div style={{ marginTop: '20px', padding: '10px', border: '1px dashed #ccc', fontSize: '0.8em', wordBreak: 'break-all', textAlign: 'left' }}>
                 <strong>DEBUG:</strong> {debugLinkValue}
             </div>
@@ -473,6 +512,28 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         );
     }
   };
+
+  // NEW: handleImportQuestions function
+  const handleImportQuestions = (importedQuestions: Question[]) => {
+    if (questions.length + importedQuestions.length > 6) {
+      alert(`Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`);
+      return;
+    }
+    const validImportedQuestions = importedQuestions.filter(q => 
+        q.title && typeof q.title === 'string' && q.title.trim() !== '' && 
+        Array.isArray(q.answers) && q.answers.length > 0 &&
+        q.answers.every(a => a.text && typeof a.text === 'string' && a.text.trim() !== '')
+    );
+
+    if (validImportedQuestions.length === 0) {
+        alert('No valid questions found in the imported file. Please check the file format (title and answer text are required).');
+        return;
+    }
+
+    setQuestions(prevQuestions => [...prevQuestions, ...validImportedQuestions]);
+    alert(`Successfully imported ${validImportedQuestions.length} questions!`);
+  };
+
 
   return (
     <div className="App">
@@ -496,6 +557,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+
   useEffect(() => {
     const getFunnelForPlay = async () => {
       if (!funnelId) {
@@ -511,6 +573,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         if (funnelDoc.exists()) {
           const funnel = funnelDoc.data() as Funnel;
           setFunnelData({ ...defaultFunnelData, ...funnel.data });
+          console.log("QuizPlayer: Loaded funnel data for play:", funnel.data);
+          console.log("QuizPlayer: Loaded finalRedirectLink for play:", funnel.data.finalRedirectLink);
         } else {
           setError('Funnel not found! Please check the link or contact the funnel creator.');
         }
@@ -538,10 +602,13 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
       if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
         let redirectLink = funnelData.finalRedirectLink || "https://example.com/default-final-redirect-link";
+
         if (funnelData.tracking && funnelData.tracking.trim() !== '') {
           const hasQueryParams = redirectLink.includes('?');
           redirectLink = `${redirectLink}${hasQueryParams ? '&' : '?'}${funnelData.tracking.trim()}`;
         }
+
+        console.log("QuizPlayer: Attempting redirect to:", redirectLink);
         window.location.href = redirectLink;
         return;
       }
@@ -571,15 +638,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       </div>
     );
   }
-  
-  if (!funnelData) {
-      return (
-          <div className="quiz-player-container">
-              <h2>Error</h2>
-              <p>Funnel data could not be loaded.</p>
-          </div>
-      )
-  }
 
   if (funnelData.questions.length === 0 || funnelData.questions.length < 6) {
     return (
@@ -601,6 +659,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     color: funnelData.textColor,
   } as React.CSSProperties;
 
+
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
       <h2 style={{color: 'var(--text-color)'}}><span role="img" aria-label="quiz">❓</span> Quiz Time!</h2>
@@ -608,7 +667,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
         <div className="progress-bar" style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}></div>
       </div>
       <p style={{color: 'var(--text-color)'}}>Question {currentQuestionIndex + 1} / {funnelData.questions.length}</p>
+
       <h3 style={{color: 'var(--text-color)'}}>{currentQuestion.title}</h3>
+
       <div className="quiz-answers-container">
         {currentQuestion.answers.map((answer, index) => (
           <button
@@ -748,7 +809,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
       ? question.answers
-      : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: '' }))
+      : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
 
   useEffect(() => {
@@ -756,7 +817,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
     setAnswers(
       question && question.answers.length > 0
         ? question.answers
-        : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: '' }))
+        : Array(4).fill(null).map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
     );
   }, [question]);
 
@@ -774,10 +835,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       alert('Question title cannot be empty!');
       return;
     }
-    const filteredAnswers = answers.filter(ans => ans.text && ans.text.trim() !== '');
+    const filteredAnswers = answers.filter(ans => ans.text.trim() !== '');
     if (filteredAnswers.length === 0) {
-      alert('Please provide at least one answer option.');
-      return;
+        alert('Please provide at least one answer option.');
+        return;
     }
 
     onSave({
@@ -805,7 +866,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       </div>
       <div className="form-group">
         <label>Question Type:</label>
-        <select value="single-choice" onChange={() => {}} disabled>
+        <select value="single-choice" onChange={() => { /* Not implemented yet */ }} disabled>
           <option>Single Choice</option>
           <option>Multiple Choice (Coming Soon)</option>
           <option>Text Input (Coming Soon)</option>
@@ -840,6 +901,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
     </div>
   );
 };
+
 
 interface LinkSettingsComponentProps {
     finalRedirectLink: string;
