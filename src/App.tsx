@@ -169,11 +169,12 @@ export default function App({ db }: AppProps) {
 interface FunnelDashboardProps {
   db: Firestore;
   funnels: Funnel[];
+  setFunnels: React.Dispatch<React.SetStateAction<Funnel[]>>;
   createFunnel: (name: string) => Promise<void>;
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
+  const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
@@ -182,72 +183,66 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
   const MAX_RETRIES = 5;
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  let timeoutId: NodeJS.Timeout;
 
-    const fetchFunnels = async () => {
-      setIsLoading(true);
-      setError(null);
-      console.log(`FunnelDashboard: Attempting to fetch funnels (Retry ${retryCount + 1}). db instance:`, db);
-      
-      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
-        const errMessage = "Firebase Firestore functions not yet loaded or db not fully initialized.";
-        console.warn("FunnelDashboard:", errMessage);
-        if (retryCount < MAX_RETRIES) {
-          timeoutId = setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            fetchFunnels();
-          }, 1000 * (retryCount + 1));
-        } else {
-          setError("CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.");
-          setIsLoading(false);
-        }
-        return;
-      }
-      
-      try {
-        const funnelsCollectionRef = collection(db, 'funnels');
-        const data = await getDocs(funnelsCollectionRef);
-        const loadedFunnels = data.docs.map((doc) => {
-          const docData = doc.data() as Partial<Funnel>;
-          const funnelWithDefaultData: Funnel = {
-            ...(docData as Funnel),
-            id: doc.id,
-            data: { ...defaultFunnelData, ...docData.data },
-          };
-          return funnelWithDefaultData;
-        });
-        setFunnels(loadedFunnels);
-        console.log("FunnelDashboard: Successfully loaded funnels.");
-        setRetryCount(0);
-      } catch (err: any) {
-        console.error("Error fetching funnels in dashboard:", err);
-        let errorMessage = "Failed to load funnels. Please check your internet connection and Firebase rules.";
-        if (err.code === 'permission-denied') {
-            errorMessage = "Permission denied. Please check your Firebase Firestore security rules (should be 'allow read, write: if true;').";
-        } else if (err.message && err.message.includes("Firebase: No Firebase App")) {
-            errorMessage = "Firebase App not initialized. Check your Firebase config in index.tsx.";
-        } else if (err.message) {
-            errorMessage = `Failed to load funnels: ${err.message}.`;
-        }
-        setError(errorMessage);
-        if (retryCount < MAX_RETRIES) {
-          timeoutId = setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-            fetchFunnels();
-          }, 1000 * (retryCount + 1));
-        } else {
-          setError(errorMessage + " Max retries reached.");
-        }
-      } finally {
-        if (retryCount >= MAX_RETRIES || error) {
-           setIsLoading(false);
-        }
-      }
-    };
-    fetchFunnels();
+  const fetchFunnels = async () => {
+    setIsLoading(true);
+    setError(null);
 
-    return () => clearTimeout(timeoutId);
-  }, [db, createFunnel, deleteFunnel, retryCount]);
+    if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
+      const errMessage = "Firebase Firestore functions not loaded or db not initialized.";
+      console.warn("FunnelDashboard:", errMessage);
+      if (retryCount < MAX_RETRIES) {
+        timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
+      } else {
+        setError("CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.");
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    try {
+      const funnelsCollectionRef = collection(db, 'funnels');
+      const data = await getDocs(funnelsCollectionRef);
+      const loadedFunnels = data.docs.map((doc) => {
+        const docData = doc.data() as Partial<Funnel>;
+        return {
+          ...(docData as Funnel),
+          id: doc.id,
+          data: { ...defaultFunnelData, ...docData.data },
+        };
+      });
+      setFunnels(loadedFunnels);
+      setRetryCount(0);
+      setError(null); // 清除旧错误
+    } catch (err: any) {
+      console.error("Error fetching funnels:", err);
+      let errorMessage = "Failed to load funnels.";
+      if (err.code === 'permission-denied') {
+        errorMessage = "Permission denied. Please check Firestore rules.";
+      } else if (err.message?.includes("No Firebase App")) {
+        errorMessage = "Firebase App not initialized. Check config.";
+      } else if (err.message) {
+        errorMessage = `Failed to load funnels: ${err.message}`;
+      }
+
+      setError(errorMessage);
+      if (retryCount < MAX_RETRIES) {
+        timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
+      } else {
+        setError(errorMessage + " Max retries reached.");
+        setIsLoading(false);
+      }
+    } finally {
+      if (retryCount >= MAX_RETRIES || error) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  fetchFunnels();
+  return () => clearTimeout(timeoutId);
+}, [db, retryCount]);
 
 
   const handleCreateFunnel = async () => {
