@@ -116,7 +116,7 @@ const defaultFunnelData: FunnelData = {
           window.location.reload();
         };
 
-        await migrateData(); 
+        
       }
     }
 
