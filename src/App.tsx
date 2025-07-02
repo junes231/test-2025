@@ -65,6 +65,8 @@ const defaultFunnelData: FunnelData = {
   const [funnels, setFunnels] = useState<Funnel[]>([]);
 
   const getFunnels = useCallback(async () => {
+  
+    if (!db) return;
    const funnelsCollectionRef = collection(db, 'funnels');
     try {
     const data = await getDocs(funnelsCollectionRef);
@@ -121,8 +123,11 @@ const defaultFunnelData: FunnelData = {
   }, [getFunnels]);
 
   const createFunnel = async (name: string) => {
+    if (!db) return;
+  const funnelsCollectionRef = collection(db, 'funnels');
+    
     try {
-     const funnelsCollectionRef = collection(db, 'funnels');
+     
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
