@@ -174,67 +174,15 @@ interface FunnelDashboardProps {
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFunnel, deleteFunnel }) => {
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({
+  funnels,
+  createFunnel,
+  deleteFunnel,
+  isLoading,
+  error
+}) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 5;
-
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-    let retrying = false;
-
-    const fetchFunnels = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
-        if (retryCount < MAX_RETRIES) {
-          retrying = true;
-          timeoutId = setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-          }, 1000 * (retryCount + 1));
-        } else {
-          setError("Failed to initialize Firebase. Please refresh or check Firebase config.");
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const funnelsCollectionRef = collection(db, 'funnels');
-        const data = await getDocs(funnelsCollectionRef);
-        const loadedFunnels = data.docs.map((doc) => {
-          const docData = doc.data() as Partial<Funnel>;
-          return {
-            ...(docData as Funnel),
-            id: doc.id,
-            data: { ...defaultFunnelData, ...docData.data },
-          };
-        });
-        setFunnels(loadedFunnels);
-        setRetryCount(0);
-      } catch (err: any) {
-        let message = err.message || "Unknown error";
-        setError("Failed to load funnels: " + message);
-        if (retryCount < MAX_RETRIES) {
-          retrying = true;
-          timeoutId = setTimeout(() => {
-            setRetryCount(prev => prev + 1);
-          }, 1000 * (retryCount + 1));
-        }
-      } finally {
-        if (!retrying) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchFunnels();
-    return () => clearTimeout(timeoutId);
-  }, [db, createFunnel, deleteFunnel, retryCount]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -243,6 +191,14 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
     }
     await createFunnel(newFunnelName);
     setNewFunnelName('');
+  };
+
+  const handleCopyLink = (funnelId: string) => {
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/$/, '');
+    const link = `${baseUrl}#/play/${funnelId}`;
+    navigator.clipboard.writeText(link).then(() => {
+      alert("Link copied to clipboard!");
+    });
   };
 
   return (
@@ -286,7 +242,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, createFu
     </div>
   );
 };
-
+    
 export default FunnelDashboard;
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
