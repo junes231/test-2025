@@ -58,71 +58,60 @@ const defaultFunnelData: FunnelData = {
   textColor: '#333333',
 };
 
-
-  export default function App({ db }: AppProps) {
+export default function App({ db }: AppProps) {
   const navigate = useNavigate();
-
   const [funnels, setFunnels] = useState<Funnel[]>([]);
 
   const getFunnels = useCallback(async () => {
-  
     if (!db) return;
-   const funnelsCollectionRef = collection(db, 'funnels');
+    const funnelsCollectionRef = collection(db, 'funnels');
     try {
-    const data = await getDocs(funnelsCollectionRef);
-    const loadedFunnels = data.docs.map((doc) => {
-      const docData = doc.data() as Partial<Funnel>;
-      const funnelWithDefaultData: Funnel = {
-        ...(docData as Funnel),
-        id: doc.id,
-        data: { ...defaultFunnelData, ...docData.data },
-      };
-      return funnelWithDefaultData;
-    });
-    
-  } catch (error) {
-    console.error("Error fetching funnels:", error);
-    alert("Failed to load funnels from database. Check console for details.");
-  }
-}, [db]);
-    
-    const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
-    const oldQuestions = localStorage.getItem('questions');
-    const oldLinks = localStorage.getItem('finalRedirectData');
-
-    if (!hasMigrated && oldQuestions && oldLinks) {
-      const parsedOldQuestions = JSON.parse(oldQuestions);
-      const parsedOldLinks = JSON.parse(oldLinks);
-
-      if (parsedOldQuestions.length > 0) {
-        console.log("Migrating old local storage data to Firestore...");
-
-        const migratedFunnelData: FunnelData = {
-          ...defaultFunnelData,
-          questions: parsedOldQuestions,
-          finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
-          tracking: parsedOldLinks.tracking || '',
-          conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
+      const data = await getDocs(funnelsCollectionRef);
+      const loadedFunnels = data.docs.map((doc) => {
+        const docData = doc.data() as Partial<Funnel>;
+        const funnelWithDefaultData: Funnel = {
+          ...(docData as Funnel),
+          id: doc.id,
+          data: { ...defaultFunnelData, ...docData.data },
         };
+        return funnelWithDefaultData;
+      });
 
-        await addDoc(funnelsCollectionRef, {
-          name: "Migrated Funnel (from LocalStorage)",
-          data: migratedFunnelData,
-        });
+      // localStorage 迁移逻辑
+      const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
+      const oldQuestions = localStorage.getItem('questions');
+      const oldLinks = localStorage.getItem('finalRedirectData');
+      if (!hasMigrated && oldQuestions && oldLinks) {
+        const parsedOldQuestions = JSON.parse(oldQuestions);
+        const parsedOldLinks = JSON.parse(oldLinks);
 
-        localStorage.setItem('hasMigratedToFirestore', 'true');
-        alert('Old quiz data migrated to Firestore! Please refresh.');
-        window.location.reload();
+        if (parsedOldQuestions.length > 0) {
+          console.log("Migrating old local storage data to Firestore...");
+          const migratedFunnelData: FunnelData = {
+            ...defaultFunnelData,
+            questions: parsedOldQuestions,
+            finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
+            tracking: parsedOldLinks.tracking || '',
+            conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
+          };
+
+          await addDoc(funnelsCollectionRef, {
+            name: "Migrated Funnel (from LocalStorage)",
+            data: migratedFunnelData,
+          });
+
+          localStorage.setItem('hasMigratedToFirestore', 'true');
+          alert('Old quiz data migrated to Firestore! Please refresh.');
+          window.location.reload();
+        }
       }
-    }
 
-    setFunnels(loadedFunnels);
-  } catch (error) {
-    console.error("Error fetching funnels:", error);
-    alert("Failed to load funnels from database. Check console for details.");
-  }
+      setFunnels(loadedFunnels);
+    } catch (error) {
+      console.error("Error fetching funnels:", error);
+      alert("Failed to load funnels from database. Check console for details.");
+    }
   }, [db]);
-}, [funnelsCollectionRef]);
 
   useEffect(() => {
     getFunnels();
@@ -130,16 +119,14 @@ const defaultFunnelData: FunnelData = {
 
   const createFunnel = async (name: string) => {
     if (!db) return;
-  const funnelsCollectionRef = collection(db, 'funnels');
-    
+    const funnelsCollectionRef = collection(db, 'funnels');
     try {
-     
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
       });
       alert(`Funnel "${name}" created!`);
-    await getFunnels();
+      await getFunnels();
       navigate(`/edit/${newFunnelRef.id}`);
     } catch (error) {
       console.error("Error creating funnel:", error);
@@ -153,7 +140,7 @@ const defaultFunnelData: FunnelData = {
         const funnelDoc = doc(db, 'funnels', funnelId);
         await deleteDoc(funnelDoc);
         alert('Funnel deleted!');
-        getFunnels();
+        await getFunnels();
         navigate('/');
       } catch (error) {
         console.error("Error deleting funnel:", error);
@@ -168,7 +155,7 @@ const defaultFunnelData: FunnelData = {
       await updateDoc(funnelDoc, { data: newData });
       console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
       alert('Funnel data saved to cloud!');
-      getFunnels();
+      await getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
       alert("Failed to save funnel data to cloud. Check console for details.");
@@ -193,80 +180,81 @@ interface FunnelDashboardProps {
   deleteFunnel: (funnelId: string) => Promise<void>;
 }
 
-  const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunnels, createFunnel, deleteFunnel }) => {
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 5;
+
   const handleCopyLink = (funnelId: string) => {
-  const url = `${window.location.origin}/play/${funnelId}`;
-  navigator.clipboard.writeText(url);
-  alert('Funnel link copied to clipboard!');
-};
-  useEffect(() => {
-  let timeoutId: NodeJS.Timeout;
-
-  const fetchFunnels = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
-      const errMessage = "Firebase Firestore functions not loaded or db not initialized.";
-      console.warn("FunnelDashboard:", errMessage);
-      if (retryCount < MAX_RETRIES) {
-        timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
-      } else {
-        setError("CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.");
-        setIsLoading(false);
-      }
-      return;
-    }
-
-    try {
-      const funnelsCollectionRef = collection(db, 'funnels');
-      const data = await getDocs(funnelsCollectionRef);
-      const loadedFunnels = data.docs.map((doc) => {
-        const docData = doc.data() as Partial<Funnel>;
-        return {
-          ...(docData as Funnel),
-          id: doc.id,
-          data: { ...defaultFunnelData, ...docData.data },
-        };
-      });
-      setFunnels(loadedFunnels);
-      setRetryCount(0);
-      setError(null); // 清除旧错误
-    } catch (err: any) {
-      console.error("Error fetching funnels:", err);
-      let errorMessage = "Failed to load funnels.";
-      if (err.code === 'permission-denied') {
-        errorMessage = "Permission denied. Please check Firestore rules.";
-      } else if (err.message?.includes("No Firebase App")) {
-        errorMessage = "Firebase App not initialized. Check config.";
-      } else if (err.message) {
-        errorMessage = `Failed to load funnels: ${err.message}`;
-      }
-
-      setError(errorMessage);
-      if (retryCount < MAX_RETRIES) {
-        timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
-      } else {
-        setError(errorMessage + " Max retries reached.");
-        setIsLoading(false);
-      }
-    } finally {
-      if (retryCount >= MAX_RETRIES || error) {
-        setIsLoading(false);
-      }
-    }
+    const url = `${window.location.origin}/play/${funnelId}`;
+    navigator.clipboard.writeText(url);
+    alert('Funnel link copied to clipboard!');
   };
 
-  fetchFunnels();
-  return () => clearTimeout(timeoutId);
-}, [db, retryCount]);
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
 
+    const fetchFunnels = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = "Firebase Firestore functions not loaded or db not initialized.";
+        console.warn("FunnelDashboard:", errMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
+        } else {
+          setError("CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.");
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const funnelsCollectionRef = collection(db, 'funnels');
+        const data = await getDocs(funnelsCollectionRef);
+        const loadedFunnels = data.docs.map((doc) => {
+          const docData = doc.data() as Partial<Funnel>;
+          return {
+            ...(docData as Funnel),
+            id: doc.id,
+            data: { ...defaultFunnelData, ...docData.data },
+          };
+        });
+        setFunnels(loadedFunnels);
+        setRetryCount(0);
+        setError(null); // 清除旧错误
+      } catch (err: any) {
+        console.error("Error fetching funnels:", err);
+        let errorMessage = "Failed to load funnels.";
+        if (err.code === 'permission-denied') {
+          errorMessage = "Permission denied. Please check Firestore rules.";
+        } else if (err.message?.includes("No Firebase App")) {
+          errorMessage = "Firebase App not initialized. Check config.";
+        } else if (err.message) {
+          errorMessage = `Failed to load funnels: ${err.message}`;
+        }
+
+        setError(errorMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => setRetryCount(prev => prev + 1), 1000 * (retryCount + 1));
+        } else {
+          setError(errorMessage + " Max retries reached.");
+          setIsLoading(false);
+        }
+      } finally {
+        if (retryCount >= MAX_RETRIES || !error) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchFunnels();
+    return () => clearTimeout(timeoutId);
+  }, [db, retryCount, setFunnels]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -294,7 +282,6 @@ interface FunnelDashboardProps {
       setIsLoading(false);
     }
   };
-
 
   return (
     <div className="dashboard-container">
@@ -369,7 +356,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
 
-
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -424,7 +410,6 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   }, [questions, finalRedirectLink, tracking, conversionGoal,
       primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
 
-
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
       alert('You can only have up to 6 questions for this quiz.');
@@ -467,12 +452,13 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
     updatedQuestion.answers = filteredAnswers;
 
-    onSave({
-      id: question?.id || Date.now().toString(),
-      title: updatedQuestion.title,
-      type: 'single-choice',
-      answers: filteredAnswers,
-    });
+    // 这里 onSave 是 QuestionFormComponent 的 prop，不在 FunnelEditor 作用域内，这里实际不会用到
+    // onSave({
+    //   id: question?.id || Date.now().toString(),
+    //   title: updatedQuestion.title,
+    //   type: 'single-choice',
+    //   answers: filteredAnswers,
+    // });
   };
 
   const handleQuestionFormCancel = () => {
@@ -498,7 +484,17 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
           <QuestionFormComponent
             question={questionToEdit}
             questionIndex={selectedQuestionIndex}
-            onSave={handleQuestionFormSave}
+            onSave={(q) => {
+              // 覆盖或添加问题
+              setQuestions(prev => {
+                if (selectedQuestionIndex === null) return prev;
+                const next = [...prev];
+                next[selectedQuestionIndex] = q;
+                return next;
+              });
+              setSelectedQuestionIndex(null);
+              setCurrentSubView('quizEditorList');
+            }}
             onCancel={handleQuestionFormCancel}
             onDelete={handleDeleteQuestion}
           />
@@ -530,22 +526,18 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
           <div className="dashboard-container">
             <h2><span role="img" aria-label="funnel">🥞</span> {funnelName} Editor</h2>
             <p>Manage components for this funnel.</p>
-
             <div className="dashboard-card" onClick={() => setCurrentSubView('quizEditorList')}>
               <h3><span role="img" aria-label="quiz">📝</span> Interactive Quiz Builder</h3>
               <p>Manage quiz questions for this funnel.</p>
             </div>
-
             <div className="dashboard-card" onClick={() => setCurrentSubView('linkSettings')}>
               <h3><span role="img" aria-label="link">🔗</span> Final Redirect Link Settings</h3>
               <p>Configure the custom link where users will be redirected.</p>
             </div>
-
             <div className="dashboard-card" onClick={() => setCurrentSubView('colorCustomizer')}>
               <h3><span role="img" aria-label="palette">🎨</span> Color Customization</h3>
               <p>Customize theme colors for this funnel.</p>
             </div>
-
             <button className="back-button" onClick={() => navigate('/')}>
               <span role="img" aria-label="back">←</span> Back to All Funnels
             </button>
@@ -558,7 +550,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
   };
 
-  // NEW: handleImportQuestions function
+  // handleImportQuestions function
   const handleImportQuestions = (importedQuestions: Question[]) => {
     if (questions.length + importedQuestions.length > 6) {
       alert(`Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`);
@@ -579,13 +571,12 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     alert(`Successfully imported ${validImportedQuestions.length} questions!`);
   };
 
-
   return (
     <div className="App">
       {renderEditorContent()}
     </div>
   );
-}
+};
 
 interface QuizPlayerProps {
   db: Firestore;
@@ -601,7 +592,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
 
   useEffect(() => {
     const getFunnelForPlay = async () => {
@@ -684,7 +674,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     );
   }
 
-  if (funnelData.questions.length === 0 || funnelData.questions.length < 6) {
+  if (!funnelData || funnelData.questions.length === 0 || funnelData.questions.length < 6) {
     return (
       <div className="quiz-player-container">
         <h2>Quiz Not Ready</h2>
@@ -703,7 +693,6 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     backgroundColor: funnelData.backgroundColor,
     color: funnelData.textColor,
   } as React.CSSProperties;
-
 
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
@@ -947,7 +936,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
   );
 };
 
-
 interface LinkSettingsComponentProps {
     finalRedirectLink: string;
     setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
@@ -1056,3 +1044,4 @@ const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
         </div>
     );
 };
+
