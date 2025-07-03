@@ -190,7 +190,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunne
   const MAX_RETRIES = 5;
 
   const handleCopyLink = (funnelId: string) => {
-    const url = `${window.location.origin}/#/play/${funnelId}`;
+    const url = `${window.location.origin}/funnel-editor/#/play/${funnelId}`;
     navigator.clipboard.writeText(url);
     alert('Funnel link copied to clipboard!');
   };
