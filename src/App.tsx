@@ -184,6 +184,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunne
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 5;
@@ -350,7 +351,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [buttonColor, setButtonColor] = useState(defaultFunnelData.buttonColor);
   const [backgroundColor, setBackgroundColor] = useState(defaultFunnelData.backgroundColor);
   const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
-
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
@@ -376,6 +377,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
         const loadedLink = funnel.data.finalRedirectLink || 'Empty';
         setDebugLinkValue(`Loaded: ${loadedLink}`);
         console.log("FunnelEditor: Loaded finalRedirectLink from Firestore:", loadedLink);
+        setIsDataLoaded(true);
       } else {
         alert('Funnel not found!');
         navigate('/');
@@ -400,9 +402,10 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     console.log("FunnelEditor: Saving finalRedirectLink to Firestore:", finalRedirectLink);
     updateFunnelData(funnelId, newData);
   }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
-      primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
+      primaryColor, buttonColor, backgroundColor, textColor, isDataLoaded, updateFunnelData]);
 
   useEffect(() => {
+    if (!isDataLoaded) return;
     const handler = setTimeout(() => {
       saveFunnelToFirestore();
     }, 1000);
@@ -590,6 +593,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [clickedAnswerIndex, setClickedAnswerIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
