@@ -602,6 +602,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       if (!funnelId) {
         setError('No funnel ID provided!');
         setIsLoading(false);
+       if (isLoading) return <div>Loading...</div>;
+       if (error) return <h2 style={{color: "red"}}>{error}</h2>;
+       if (!funnelData) return <div>Data is missing, please refresh and try again</div>;
         return;
       }
       setIsLoading(true);
