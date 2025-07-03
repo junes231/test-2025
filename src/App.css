@@ -740,3 +740,10 @@ p {
     color: #6c757d;
     border: 1px dashed #ccc;
 }
+.question-list {
+  line-height: 1.8;      
+}
+
+.question-item {
+  margin-bottom: 10px;   
+}
