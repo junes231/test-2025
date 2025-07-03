@@ -154,7 +154,7 @@ export default function App({ db }: AppProps) {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
       console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
-      alert('Funnel data saved to cloud!');
+     // alert('Funnel data saved to cloud!');
       await getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
