@@ -200,7 +200,11 @@ interface FunnelDashboardProps {
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
   const MAX_RETRIES = 5;
-
+  const handleCopyLink = (funnelId: string) => {
+  const url = `${window.location.origin}/play/${funnelId}`;
+  navigator.clipboard.writeText(url);
+  alert('Funnel link copied to clipboard!');
+};
   useEffect(() => {
   let timeoutId: NodeJS.Timeout;
 
