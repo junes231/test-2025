@@ -79,7 +79,12 @@ const defaultFunnelData: FunnelData = {
       };
       return funnelWithDefaultData;
     });
-
+    
+  } catch (error) {
+    console.error("Error fetching funnels:", error);
+    alert("Failed to load funnels from database. Check console for details.");
+  }
+}, [db]);
     
     const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
     const oldQuestions = localStorage.getItem('questions');
@@ -116,6 +121,7 @@ const defaultFunnelData: FunnelData = {
     console.error("Error fetching funnels:", error);
     alert("Failed to load funnels from database. Check console for details.");
   }
+  }, [db]);
 }, [funnelsCollectionRef]);
 
   useEffect(() => {
@@ -171,7 +177,7 @@ const defaultFunnelData: FunnelData = {
 
   return (
     <Routes>
-      <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
+      <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} setFunnels={setFunnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
       <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
       <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
       <Route path="*" element={<h2>404 Not Found</h2>} />
