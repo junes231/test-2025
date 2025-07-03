@@ -139,7 +139,7 @@ const defaultFunnelData: FunnelData = {
         data: defaultFunnelData,
       });
       alert(`Funnel "${name}" created!`);
-      getFunnels();
+    await getFunnels();
       navigate(`/edit/${newFunnelRef.id}`);
     } catch (error) {
       console.error("Error creating funnel:", error);
