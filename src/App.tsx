@@ -964,7 +964,7 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
     finalRedirectLink, setFinalRedirectLink,
     tracking, setTracking,
     conversionGoal, setConversionGoal,
-    onBack
+    onBack,
     onApplied
 }) => {
     return (
