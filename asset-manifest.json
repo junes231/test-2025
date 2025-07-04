@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/funnel-editor/static/css/main.06aed3c5.css",
-    "main.js": "/funnel-editor/static/js/main.3f61225e.js",
+    "main.js": "/funnel-editor/static/js/main.47540ed4.js",
     "index.html": "/funnel-editor/index.html",
     "main.06aed3c5.css.map": "/funnel-editor/static/css/main.06aed3c5.css.map",
-    "main.3f61225e.js.map": "/funnel-editor/static/js/main.3f61225e.js.map"
+    "main.47540ed4.js.map": "/funnel-editor/static/js/main.47540ed4.js.map"
   },
   "entrypoints": [
     "static/css/main.06aed3c5.css",
-    "static/js/main.3f61225e.js"
+    "static/js/main.47540ed4.js"
   ]
 }
