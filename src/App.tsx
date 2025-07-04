@@ -517,7 +517,8 @@ const handleAppliedClick = () => {
             conversionGoal={conversionGoal}
             setConversionGoal={setConversionGoal}
             onBack={() => setCurrentSubView('mainEditorDashboard')}
-          />
+            onApplied={handleAppliedClick}
+            />
         );
       case 'colorCustomizer':
         return (
