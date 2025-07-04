@@ -340,6 +340,10 @@ interface FunnelEditorProps {
 }
 
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
+const handleAppliedClick = () => {
+  saveFunnelToFirestore();
+  alert('Settings applied and saved!');
+};
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
 
@@ -356,7 +360,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
-  const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
+  const [debugLinkValue, setDebugLinkValue is] = useState('Debug: N/A');
 
   useEffect(() => {
     const getFunnel = async () => {
@@ -952,6 +956,7 @@ interface LinkSettingsComponentProps {
     conversionGoal: string;
     setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
     onBack: () => void;
+    onApplied: () => void;
 }
 
 const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
@@ -959,6 +964,7 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
     tracking, setTracking,
     conversionGoal, setConversionGoal,
     onBack
+    onApplied
 }) => {
     return (
         <div className="link-settings-container">
