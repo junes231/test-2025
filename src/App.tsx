@@ -150,6 +150,7 @@ export default function App({ db }: AppProps) {
   };
 
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
+   console.log("Current User:", firebase.auth().currentUser);
     try {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
