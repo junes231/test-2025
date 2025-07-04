@@ -360,7 +360,7 @@ const handleAppliedClick = () => {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
-  const [debugLinkValue, setDebugLinkValue is] = useState('Debug: N/A');
+  const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
 
   useEffect(() => {
     const getFunnel = async () => {
