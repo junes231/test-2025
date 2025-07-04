@@ -956,7 +956,6 @@ interface LinkSettingsComponentProps {
     setTracking: React.Dispatch<React.SetStateAction<string>>;
     conversionGoal: string;
     setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
-    onBack: () => void;
     onApplied: () => void;
 }
 
