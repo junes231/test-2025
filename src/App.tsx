@@ -347,7 +347,7 @@ interface FunnelEditorProps {
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
 }
 
-import React, { useState, useEffect, useCallback } from 'react';
+
 import { useParams, useNavigate } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { Input, Button } from 'antd';
