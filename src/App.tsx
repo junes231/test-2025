@@ -109,7 +109,7 @@ export default function App({ db }: AppProps) {
       setFunnels(loadedFunnels);
     } catch (error) {
       console.error("Error fetching funnels:", error);
-      alert("Failed to load funnels from database. Check console for details.");
+     // alert("Failed to load funnels from database. Check console for details.");
     }
   }, [db]);
 
@@ -130,7 +130,7 @@ export default function App({ db }: AppProps) {
       navigate(`/edit/${newFunnelRef.id}`);
     } catch (error) {
       console.error("Error creating funnel:", error);
-      alert("Failed to create funnel. Check console for details.");
+     // alert("Failed to create funnel. Check console for details.");
     }
   };
 
@@ -144,7 +144,7 @@ export default function App({ db }: AppProps) {
         navigate('/');
       } catch (error) {
         console.error("Error deleting funnel:", error);
-        alert("Failed to delete funnel. Check console for details.");
+        // alert("Failed to delete funnel. Check console for details.");
       }
     }
   };
