@@ -158,7 +158,7 @@ export default function App({ db }: AppProps) {
       await getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
-      alert("Failed to save funnel data to cloud. Check console for details.");
+      // alert("Failed to save funnel data to cloud. Check console for details.");
     }
   };
 
