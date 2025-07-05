@@ -13,15 +13,7 @@ import {
   getDoc
 } from 'firebase/firestore';
 import './App.css';
-const updateFunnelData = async (funnelId: string, newData: any) => {
-  try {
-    const funnelDoc = doc(db, 'funnels', funnelId);
-    await updateDoc(funnelDoc, { data: newData });
-    console.log("Data saved successfully for funnel:", funnelId);
-  } catch (error) {
-    console.error("Error updating funnel:", error);
-  }
-};
+
 interface Answer {
   id: string;
   text: string;
@@ -347,45 +339,11 @@ interface FunnelEditorProps {
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
 }
 
-
-import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { Input, Button } from 'antd';
-
-interface Question {
-  id: string;
-  title: string;
-  type: string;
-  answers: { id: string; text: string }[];
-}
-
-interface Funnel {
-  name: string;
-  data: {
-    questions: Question[];
-    finalRedirectLink: string;
-    tracking: string;
-    conversionGoal: string;
-    primaryColor: string;
-    buttonColor: string;
-    backgroundColor: string;
-    textColor: string;
-  };
-}
-
-interface FunnelEditorProps {
-  db: any;
-  updateFunnelData: (id: string, data: any) => Promise<void>;
-}
-
-const defaultFunnelData = {
-  primaryColor: '#1890ff',
-  buttonColor: '#52c41a',
-  backgroundColor: '#ffffff',
-  textColor: '#000000',
-};
-
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
+const handleAppliedClick = () => {
+  saveFunnelToFirestore();
+  alert('Settings applied and saved!');
+};
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
 
@@ -401,9 +359,9 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
+
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
 
-  // 加载漏斗数据
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -433,10 +391,9 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     getFunnel();
   }, [funnelId, db, navigate]);
 
-  // 保存数据到 Firestore
-  const saveFunnelToFirestore = useCallback(async () => {
+  const saveFunnelToFirestore = useCallback(() => {
     if (!funnelId) return;
-    const newData = {
+    const newData: FunnelData = {
       questions,
       finalRedirectLink,
       tracking,
@@ -448,16 +405,10 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     };
     setDebugLinkValue(`Saving: ${finalRedirectLink || 'Empty'}`);
     console.log("FunnelEditor: Saving finalRedirectLink to Firestore:", finalRedirectLink);
-    try {
-      await updateFunnelData(funnelId, newData);
-      console.log("Saved funnel data:", newData);
-    } catch (error) {
-      console.error("Save failed:", error);
-    }
+    updateFunnelData(funnelId, newData);
   }, [funnelId, questions, finalRedirectLink, tracking, conversionGoal,
-      primaryColor, buttonColor, backgroundColor, textColor, updateFunnelData]);
+      primaryColor, buttonColor, backgroundColor, textColor, isDataLoaded, updateFunnelData]);
 
-  // 自动保存，监听相关状态变化
   useEffect(() => {
     if (!isDataLoaded) return;
     const handler = setTimeout(() => {
@@ -465,15 +416,8 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }, 1000);
     return () => clearTimeout(handler);
   }, [questions, finalRedirectLink, tracking, conversionGoal,
-      primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore, isDataLoaded]);
+      primaryColor, buttonColor, backgroundColor, textColor, saveFunnelToFirestore]);
 
-  // 点击保存按钮
-  const handleAppliedClick = () => {
-    saveFunnelToFirestore();
-    alert('Settings applied and saved!');
-  };
-
-  // 添加新问题
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
       alert('You can only have up to 6 questions for this quiz.');
@@ -490,13 +434,11 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     setCurrentSubView('questionForm');
   };
 
-  // 编辑问题
   const handleEditQuestion = (index: number) => {
     setSelectedQuestionIndex(index);
     setCurrentSubView('questionForm');
   };
 
-  // 删除问题
   const handleDeleteQuestion = () => {
     if (selectedQuestionIndex !== null && window.confirm('Are you sure you want to delete this question?')) {
       const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
@@ -506,31 +448,26 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
   };
 
-  // 这里是 JSX 返回部分，示例只写了编辑链接输入框和保存按钮
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Edit Funnel: {funnelName}</h2>
+  const handleQuestionFormSave = (updatedQuestion: Question) => {
+    if (!updatedQuestion.title.trim()) {
+      alert('Question title cannot be empty!');
+      return;
+    }
+    const filteredAnswers = updatedQuestion.answers.filter(ans => ans.text.trim() !== '');
+    if (filteredAnswers.length === 0) {
+        alert('Please provide at least one answer option.');
+        return;
+    }
+    updatedQuestion.answers = filteredAnswers;
 
-      <label>Final Redirect Link:</label>
-      <Input
-        value={finalRedirectLink}
-        onChange={e => setFinalRedirectLink(e.target.value)}
-        placeholder="Enter final redirect URL"
-        style={{ marginBottom: 16 }}
-      />
-
-      {/* 你可以继续添加其他编辑项 */}
-
-      <Button type="primary" onClick={handleAppliedClick}>
-        Save Now
-      </Button>
-
-      <div style={{ marginTop: 10, color: 'gray' }}>{debugLinkValue}</div>
-    </div>
-  );
-};
-
-export default FunnelEditor;
+    // 这里 onSave 是 QuestionFormComponent 的 prop，不在 FunnelEditor 作用域内，这里实际不会用到
+    // onSave({
+    //   id: question?.id || Date.now().toString(),
+    //   title: updatedQuestion.title,
+    //   type: 'single-choice',
+    //   answers: filteredAnswers,
+    // });
+  };
 
   const handleQuestionFormCancel = () => {
     setSelectedQuestionIndex(null);
