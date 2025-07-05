@@ -200,7 +200,39 @@ export default function App({ db }: AppProps) {
     </div>
 );
 }
+export function AppWrapper(props: AppProps) {
+  const [entered, setEntered] = useState(false);
+  const [password, setPassword] = useState("");
 
+  const handleCheckPassword = () => {
+    if (password === "myFunnel888musk") {
+      setEntered(true);
+    } else {
+      alert("❌ 密码错误，请重试。");
+    }
+  };
+
+  if (!entered) {
+    return (
+      <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
+        <h2>🔒 请输入访问密码</h2>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter password"
+          style={{ padding: 10, fontSize: 16, marginRight: 10 }}
+        />
+        <button onClick={handleCheckPassword} style={{ padding: '10px 20px', fontSize: 16 }}>
+          进入
+        </button>
+      </div>
+    );
+  }
+
+  // ✅ 正确加载 App 主体
+  return <App {...props} />;
+}
 interface FunnelDashboardProps {
   db: Firestore;
   funnels: Funnel[];
