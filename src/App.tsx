@@ -115,13 +115,15 @@ export default function App({ db }: AppProps) {
     }
   }, [db]);
   function App() {
-  // ✅ 匿名登录并打印 UID —— 放在这里！
+  const [uid, setUid] = useState<string | null>(null);
+
   useEffect(() => {
     const auth = getAuth();
     signInAnonymously(auth)
       .then(() => {
-        console.log("✅ 匿名登录成功");
-        console.log("你的 Firebase UID 是:", auth.currentUser?.uid);
+        const currentUid = auth.currentUser?.uid || null;
+        setUid(currentUid);
+        console.log("✅ 匿名登录成功，UID:", currentUid);
       })
       .catch((error) => {
         console.error("❌ 匿名登录失败:", error);
@@ -129,11 +131,17 @@ export default function App({ db }: AppProps) {
   }, []);
 
   return (
-    <div>
-       <FunnelEditor />
+    <div style={{ padding: 20 }}>
+      <h1> FunnelEditor</h1>
+      {uid && (
+        <div style={{ marginTop: 20, fontSize: 16 }}>
+          <strong>你的 Firebase UID 是：</strong><br />
+          <code>{uid}</code>
+        </div>
+      )}
     </div>
   );
-}
+
   useEffect(() => {
     getFunnels();
   }, [getFunnels]);
