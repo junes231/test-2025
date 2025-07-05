@@ -113,35 +113,7 @@ export default function App({ db }: AppProps) {
       alert("Failed to load funnels from database. Check console for details.");
     }
   }, [db]);
-  function App() {
-  const [uid, setUid] = useState<string | null>(null);
-
-  useEffect(() => {
-    const auth = getAuth();
-    signInAnonymously(auth)
-      .then(() => {
-        const currentUid = auth.currentUser?.uid || null;
-        setUid(currentUid);
-        console.log("✅ 匿名登录成功，UID:", currentUid);
-      })
-      .catch((error) => {
-        console.error("❌ 匿名登录失败:", error);
-      });
-  }, []);
-
-  return (
-    <div style={{ padding: 20 }}>
-      <h1> FunnelEditor</h1>
-      {uid && (
-        <div style={{ marginTop: 20, fontSize: 16 }}>
-          <strong>你的 Firebase UID 是：</strong><br />
-          <code>{uid}</code>
-        </div>
-      )}
-    </div>
-  );
-
-  useEffect(() => {
+   useEffect(() => {
     getFunnels();
   }, [getFunnels]);
 
