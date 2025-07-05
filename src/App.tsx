@@ -180,6 +180,17 @@ export default function App({ db }: AppProps) {
   };
 
   return (
+     <div style={{ padding: 24, fontFamily: 'Arial' }}>
+    {/* ✅ 显示 UID */}
+    {uid ? (
+      <p style={{ color: 'green' }}>
+        Logged in UID: <code>{uid}</code>
+      </p>
+    ) : (
+      <p style={{ color: 'gray' }}>Logging in anonymously...</p>
+    )}
+
+    {/* 原来的路由结构不动 */}
     <Routes>
       <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} setFunnels={setFunnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
       <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
