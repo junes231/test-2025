@@ -62,7 +62,7 @@ const defaultFunnelData: FunnelData = {
 export default function App({ db }: AppProps) {
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-
+  const [uid, setUid] = useState<string | null>(null);
   const getFunnels = useCallback(async () => {
     if (!db) return;
     const funnelsCollectionRef = collection(db, 'funnels');
@@ -116,7 +116,22 @@ export default function App({ db }: AppProps) {
    useEffect(() => {
     getFunnels();
   }, [getFunnels]);
-
+   useEffect(() => {
+    const auth = getAuth();
+    signInAnonymously(auth)
+      .then(() => {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+          setUid(currentUser.uid);
+          alert("✅ Anonymous login successful! UID: " + currentUser.uid);
+        } else {
+          alert("⚠️ Logged in, but no user found.");
+        }
+      })
+      .catch((error) => {
+        alert("❌ Login failed: " + error.message);
+      });
+  }, []);
   const createFunnel = async (name: string) => {
     if (!db) return;
     const funnelsCollectionRef = collection(db, 'funnels');
