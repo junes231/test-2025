@@ -65,6 +65,21 @@ export default function App({ db }: AppProps) {
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
+   const handleGoogleLogin = () => {
+    const auth = getAuth();
+    const provider = new GoogleAuthProvider();
+   
+     signInWithPopup(auth, provider)
+      .then((result) => {
+        const user = result.user;
+        setUid(user.uid);
+        alert("✅ Google 登录成功！UID: " + user.uid);
+      })
+      .catch((error) => {
+        alert("❌ 登录失败：" + error.message);
+        console.error(error);
+      });
+  };
   const getFunnels = useCallback(async () => {
     if (!db) return;
     const funnelsCollectionRef = collection(db, 'funnels');
@@ -203,7 +218,11 @@ export default function App({ db }: AppProps) {
 
   return (
      <div style={{ padding: 24, fontFamily: 'Arial' }}>
-    {/* ✅ 显示 UID */}
+      {/* ✅ 登录按钮 */}
+    <button onClick={handleGoogleLogin} style={{ marginBottom: 12 }}>
+      使用 Google 登录
+    </button>
+       {/* ✅ 显示 UID */}
     {uid ? (
       <p style={{ color: 'green' }}>
         Logged in UID: <code>{uid}</code>
