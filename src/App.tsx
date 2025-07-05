@@ -340,10 +340,7 @@ interface FunnelEditorProps {
 }
 
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
-const handleAppliedClick = () => {
-  saveFunnelToFirestore();
-  alert('Settings applied and saved!');
-};
+
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
 
@@ -361,7 +358,10 @@ const handleAppliedClick = () => {
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
-
+  const handleAppliedClick = () => {
+  saveFunnelToFirestore();
+  alert('Settings applied and saved!');
+};
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -997,7 +997,7 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
                 </select>
             </div>
             <div className="form-actions">
-                <button className="save-button" onClick={() => alert('Settings applied! (Auto-saved)')}>
+                <button className="save-button" onClick={onApplied}>
                     <span role="img" aria-label="save">💾</span> Applied
                 </button>
                 <button className="cancel-button" onClick={onBack}>
