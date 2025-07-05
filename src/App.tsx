@@ -197,7 +197,8 @@ export default function App({ db }: AppProps) {
       <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
       <Route path="*" element={<h2>404 Not Found</h2>} />
     </Routes>
-  );
+    </div>
+);
 }
 
 interface FunnelDashboardProps {
