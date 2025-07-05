@@ -114,8 +114,10 @@ export default function App({ db }: AppProps) {
     }
   }, [db]);
    useEffect(() => {
+  if (uid) {
     getFunnels();
-  }, [getFunnels]);
+  }
+}, [uid, getFunnels]);
    useEffect(() => {
     const auth = getAuth();
     signInAnonymously(auth)
