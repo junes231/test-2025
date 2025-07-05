@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
-import { getAuth, signInAnonymously, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { getAuth, signInAnonymously, signInWithRedirect, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
@@ -66,8 +66,9 @@ export default function App({ db }: AppProps) {
    const handleGoogleLogin = () => {
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
-   
-     signInWithPopup(auth, provider)
+   alert("📢 登录跳转中，请在弹出的 Google 页面完成登录");
+  signInWithRedirect(auth, provider);
+     
       .then((result) => {
         const user = result.user;
         setUid(user.uid);
