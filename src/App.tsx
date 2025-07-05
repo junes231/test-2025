@@ -135,21 +135,31 @@ export default function App({ db }: AppProps) {
       });
   }, []);
   const createFunnel = async (name: string) => {
-    if (!db) return;
-    const funnelsCollectionRef = collection(db, 'funnels');
-    try {
-      const newFunnelRef = await addDoc(funnelsCollectionRef, {
-        name: name,
-        data: defaultFunnelData,
-      });
-      alert(`Funnel "${name}" created!`);
-      await getFunnels();
-      navigate(`/edit/${newFunnelRef.id}`);
-    } catch (error) {
-      console.error("Error creating funnel:", error);
-      alert("Failed to create funnel. Check console for details.");
-    }
-  };
+  if (!db) return;
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("⚠️ 未登录，无法创建漏斗");
+    return;
+  }
+
+  const funnelsCollectionRef = collection(db, 'funnels');
+
+  try {
+    const newFunnelRef = await addDoc(funnelsCollectionRef, {
+      name: name,
+      data: defaultFunnelData,
+      uid: user.uid  // ✅ 添加 UID 字段
+    });
+    alert(`Funnel "${name}" created!`);
+    await getFunnels();
+    navigate(`/edit/${newFunnelRef.id}`);
+  } catch (error) {
+    console.error("Error creating funnel:", error);
+    alert("Failed to create funnel. Check console for details.");
+  }
+};
 
   const deleteFunnel = async (funnelId: string) => {
     if (window.confirm("Are you sure you want to delete this funnel? This action cannot be undone.")) {
@@ -167,17 +177,27 @@ export default function App({ db }: AppProps) {
   };
 
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
-    try {
-      const funnelDoc = doc(db, 'funnels', funnelId);
-      await updateDoc(funnelDoc, { data: newData });
-      console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
-     // alert('Funnel data saved to cloud!');
-      await getFunnels();
-    } catch (error) {
-      console.error("Error updating funnel:", error);
-      alert("Failed to save funnel data to cloud. Check console for details.");
-    }
-  };
+  const auth = getAuth();
+  const user = auth.currentUser;
+
+  if (!user) {
+  // alert("⚠️ 未登录，无法保存数据");
+    return;
+  }
+
+  try {
+    const funnelDoc = doc(db, 'funnels', funnelId);
+    await updateDoc(funnelDoc, {
+      data: newData,
+      uid: user.uid  // ✅ 保证更新时仍带有 uid 字段
+    });
+    console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
+    await getFunnels();
+  } catch (error) {
+    console.error("Error updating funnel:", error);
+   // alert("Failed to save funnel data to cloud. Check console for details.");
+  }
+};
 
   return (
      <div style={{ padding: 24, fontFamily: 'Arial' }}>
