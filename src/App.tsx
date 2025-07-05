@@ -135,20 +135,13 @@ export default function App({ db }: AppProps) {
 }, [uid, getFunnels]);
    useEffect(() => {
     const auth = getAuth();
-    signInAnonymously(auth)
-      .then(() => {
-        const currentUser = auth.currentUser;
-        if (currentUser) {
-          setUid(currentUser.uid);
-          alert("✅ Anonymous login successful! UID: " + currentUser.uid);
-        } else {
-          alert("⚠️ Logged in, but no user found.");
-        }
-      })
-      .catch((error) => {
-        alert("❌ Login failed: " + error.message);
-      });
-  }, []);
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+    if (user) {
+      setUid(user.uid);
+    }
+  });
+  return () => unsubscribe(); // 清理监听器
+}, []);
   const createFunnel = async (name: string) => {
   if (!db) return;
   const auth = getAuth();
