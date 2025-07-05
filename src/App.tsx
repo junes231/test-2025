@@ -1,3 +1,5 @@
+import { getAuth, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import React, { useState } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
