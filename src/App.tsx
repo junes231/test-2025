@@ -303,14 +303,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, funnels, setFunne
 
   return (
     <div className="dashboard-container">
-     {uid ? (
-  <p style={{ color: 'green' }}>
-    Logged in UID: <code>{uid}</code>
-  </p>
-) : (
-  <p style={{ color: 'gray' }}>Logging in anonymously...</p>
-)}
-      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
+    <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
       <div className="create-funnel-section">
         <input
           type="text"
