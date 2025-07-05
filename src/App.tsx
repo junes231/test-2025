@@ -343,7 +343,10 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
-
+  const handleAppliedClick = () => {
+  saveFunnelToFirestore();
+  alert('Settings applied and saved!');
+};
   const [funnelName, setFunnelName] = useState('Loading...');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
@@ -358,10 +361,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
-  const handleAppliedClick = () => {
-  saveFunnelToFirestore();
-  alert('Settings applied and saved!');
-};
+  
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
