@@ -109,7 +109,7 @@ export default function App({ db }: AppProps) {
       setFunnels(loadedFunnels);
     } catch (error) {
       console.error("Error fetching funnels:", error);
-     // alert("Failed to load funnels from database. Check console for details.");
+      alert("Failed to load funnels from database. Check console for details.");
     }
   }, [db]);
 
@@ -130,7 +130,7 @@ export default function App({ db }: AppProps) {
       navigate(`/edit/${newFunnelRef.id}`);
     } catch (error) {
       console.error("Error creating funnel:", error);
-     // alert("Failed to create funnel. Check console for details.");
+      alert("Failed to create funnel. Check console for details.");
     }
   };
 
@@ -144,13 +144,12 @@ export default function App({ db }: AppProps) {
         navigate('/');
       } catch (error) {
         console.error("Error deleting funnel:", error);
-        // alert("Failed to delete funnel. Check console for details.");
+        alert("Failed to delete funnel. Check console for details.");
       }
     }
   };
 
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
-   console.log("Current User:", firebase.auth().currentUser);
     try {
       const funnelDoc = doc(db, 'funnels', funnelId);
       await updateDoc(funnelDoc, { data: newData });
@@ -159,7 +158,7 @@ export default function App({ db }: AppProps) {
       await getFunnels();
     } catch (error) {
       console.error("Error updating funnel:", error);
-      // alert("Failed to save funnel data to cloud. Check console for details.");
+      alert("Failed to save funnel data to cloud. Check console for details.");
     }
   };
 
@@ -340,13 +339,9 @@ interface FunnelEditorProps {
 }
 
 const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => {
-
   const { funnelId } = useParams<{ funnelId: string }>();
   const navigate = useNavigate();
-  const handleAppliedClick = () => {
-  saveFunnelToFirestore();
-  alert('Settings applied and saved!');
-};
+
   const [funnelName, setFunnelName] = useState('Loading...');
   const [questions, setQuestions] = useState<Question[]>([]);
   const [finalRedirectLink, setFinalRedirectLink] = useState('');
@@ -361,7 +356,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
-  
+
   useEffect(() => {
     const getFunnel = async () => {
       if (!funnelId) return;
@@ -517,8 +512,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
             conversionGoal={conversionGoal}
             setConversionGoal={setConversionGoal}
             onBack={() => setCurrentSubView('mainEditorDashboard')}
-            onApplied={handleAppliedClick}
-            />
+          />
         );
       case 'colorCustomizer':
         return (
@@ -956,15 +950,14 @@ interface LinkSettingsComponentProps {
     setTracking: React.Dispatch<React.SetStateAction<string>>;
     conversionGoal: string;
     setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
-    onApplied: () => void;
+    onBack: () => void;
 }
 
 const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
     finalRedirectLink, setFinalRedirectLink,
     tracking, setTracking,
     conversionGoal, setConversionGoal,
-    onBack,
-    onApplied
+    onBack
 }) => {
     return (
         <div className="link-settings-container">
@@ -997,7 +990,7 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
                 </select>
             </div>
             <div className="form-actions">
-                <button className="save-button" onClick={onApplied}>
+                <button className="save-button" onClick={() => alert('Settings applied! (Auto-saved)')}>
                     <span role="img" aria-label="save">💾</span> Applied
                 </button>
                 <button className="cancel-button" onClick={onBack}>
@@ -1048,9 +1041,9 @@ const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
                 <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
             </div>
             <div className="form-actions">
-                <button className="save-button" onClick={handleAppliedClick}>
-  <span role="img" aria-label="save">💾</span> Apply
-</button>
+                <button className="save-button" onClick={() => alert('Color settings applied! (Auto-saved)')}>
+                    <span role="img" aria-label="save">💾</span> Applied
+                </button>
                 <button className="cancel-button" onClick={onBack}>
                     <span role="img" aria-label="back">←</span> Back to Editor
                 </button>
@@ -1058,4 +1051,3 @@ const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
         </div>
     );
 };
-
