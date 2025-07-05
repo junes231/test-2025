@@ -1,3 +1,5 @@
+import React, { useEffect } from 'react';
+import { getAuth, signInAnonymously } from 'firebase/auth';
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
@@ -112,7 +114,26 @@ export default function App({ db }: AppProps) {
       alert("Failed to load funnels from database. Check console for details.");
     }
   }, [db]);
+  function App() {
+  // ✅ 匿名登录并打印 UID —— 放在这里！
+  useEffect(() => {
+    const auth = getAuth();
+    signInAnonymously(auth)
+      .then(() => {
+        console.log("✅ 匿名登录成功");
+        console.log("你的 Firebase UID 是:", auth.currentUser?.uid);
+      })
+      .catch((error) => {
+        console.error("❌ 匿名登录失败:", error);
+      });
+  }, []);
 
+  return (
+    <div>
+       <FunnelEditor />
+    </div>
+  );
+}
   useEffect(() => {
     getFunnels();
   }, [getFunnels]);
