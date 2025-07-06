@@ -227,7 +227,7 @@ export default function App({ db }: AppProps) {
 );
 }
 export function AppWrapper(props: AppProps) {
-  const [entered, setEntered] = useState(true);
+  const [entered, setEntered] = useState(false);
   const [password, setPassword] = useState("");
 
   const handleCheckPassword = () => {
