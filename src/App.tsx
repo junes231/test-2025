@@ -134,11 +134,20 @@ useEffect(() => {
 }, [uid, db]);
   // 🔁 自动匿名登录
   useEffect(() => {
-    const auth = getAuth();
-    signInAnonymously(auth).catch((error) => {
+  const auth = getAuth();
+  signInAnonymously(auth)
+    .then(() => {
+      const user = auth.currentUser;
+      if (user) {
+        setUid(user.uid); // ✅ 保存 UID 到状态
+        console.log("匿名登录成功：", user.uid);
+      }
+    })
+    .catch((error) => {
       alert("匿名登录失败：" + error.message);
+      console.error(error);
     });
-  }, []);
+}, []);
 
   // 🔨 创建漏斗
   const createFunnel = async (name: string) => {
