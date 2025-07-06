@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 
-import FunnelEditor from './components/FunnelEditor';
-import QuizPlayer from './components/QuizPlayer';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
