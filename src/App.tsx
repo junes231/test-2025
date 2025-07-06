@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
-import { getAuth, getRedirectResult, signInWithRedirect, GoogleAuthProvider, onAuthStateChanged} from 'firebase/auth';
+import { getAuth, GithubAuthProvider, signInWithRedirect } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route, Link } from 'react-router-dom';
 import {
   collection,
@@ -63,11 +63,12 @@ export default function App({ db }: AppProps) {
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
-   const handleGoogleLogin = () => {
+   const handleGitHubLogin = () => {
   const auth = getAuth();
-  const provider = new GoogleAuthProvider();
-  alert("📢 登录跳转中，请在新页面完成 Google 登录");
-  signInWithRedirect(auth, provider); // ✅ 不要加 then/catch！
+  const provider = new GithubAuthProvider();
+
+  alert("📱 正在跳转 GitHub 登录页面...");
+  signInWithRedirect(auth, provider);
 };
   const getFunnels = useCallback(async () => {
     if (!db) return;
@@ -125,29 +126,15 @@ export default function App({ db }: AppProps) {
   }
 }, [uid, getFunnels]);
    useEffect(() => {
-  const auth = getAuth();
-
-  // ⏪ 登录跳转回来后自动识别结果
-  getRedirectResult(auth)
-    .then((result) => {
-      if (result && result.user) {
-        setUid(result.user.uid);
-        alert("✅ Google 登录成功！UID: " + result.user.uid);
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUid(user.uid);
+        console.log("✅ 登录成功 UID:", user.uid);
       }
-    })
-    .catch((error) => {
-      console.error("❌ Redirect 登录失败:", error);
     });
-
-  // 👁️ 实时监听 UID（匿名登录、Google 登录都适用）
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
-    if (user) {
-      setUid(user.uid);
-    }
-  });
-
-  return () => unsubscribe();
-}, []);
+    return () => unsubscribe();
+  }, []);
   const createFunnel = async (name: string) => {
   if (!db) return;
   const auth = getAuth();
@@ -216,8 +203,9 @@ export default function App({ db }: AppProps) {
   return (
      <div style={{ padding: 24, fontFamily: 'Arial' }}>
       {/* ✅ 登录按钮 */}
-    <button onClick={handleGoogleLogin} style={{ marginBottom: 12 }}>
-      使用 Google 登录
+    <button onClick={handleGitHubLogin} style={{ marginBottom: 12 }}>
+  使用 GitHub 登录
+</button>
     </button>
        {/* ✅ 显示 UID */}
     {uid ? (
