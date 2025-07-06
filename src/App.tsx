@@ -205,7 +205,7 @@ export default function App({ db }: AppProps) {
       {/* ✅ 登录按钮 */}
     <button onClick={handleGitHubLogin} style={{ marginBottom: 12 }}>
   使用 GitHub 登录
-</button>
+
     </button>
        {/* ✅ 显示 UID */}
     {uid ? (
