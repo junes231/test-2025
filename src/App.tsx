@@ -107,7 +107,31 @@ export default function App({ db }: AppProps) {
     });
     return () => unsubscribe();
   }, []);
+   // ✅ 修复旧漏斗数据（给没有 uid 的文档加上 uid 字段）
+useEffect(() => {
+  const fixOldFunnels = async () => {
+    if (!db || !uid) return;
 
+    const funnelsCollectionRef = collection(db, 'funnels');
+    const snapshot = await getDocs(funnelsCollectionRef);
+    const updates = [];
+
+    snapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (!data.uid) {
+        const docRef = doc(db, 'funnels', docSnap.id);
+        updates.push(updateDoc(docRef, { uid }));
+      }
+    });
+
+    if (updates.length > 0) {
+      await Promise.all(updates);
+      console.log("✅ 所有旧漏斗数据已补上 uid 字段");
+    }
+  };
+
+  fixOldFunnels();
+}, [uid, db]);
   // 🔁 自动匿名登录
   useEffect(() => {
     const auth = getAuth();
