@@ -65,13 +65,19 @@ export default function App({ db }: AppProps) {
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
-   const handleGitHubLogin = () => {
-  const auth = getAuth();
-  const provider = new GithubAuthProvider();
+  const [entered, setEntered] = useState(false);
+  const [password, setPassword] = useState("");
 
-  alert("📱 正在跳转 GitHub 登录页面...");
-  signInWithRedirect(auth, provider);
-};
+  // 🔐 密码校验逻辑
+  const handleCheckPassword = () => {
+    if (password === "myFunnel888musk") {
+      setEntered(true);
+    } else {
+      alert("❌ 密码错误，请重试。");
+    }
+  };
+
+  // 🔁 获取漏斗数据
   const getFunnels = useCallback(async () => {
     if (!db) return;
     const funnelsCollectionRef = collection(db, 'funnels');
@@ -86,147 +92,125 @@ export default function App({ db }: AppProps) {
         };
         return funnelWithDefaultData;
       });
-
-      // localStorage 迁移逻辑
-      const hasMigrated = localStorage.getItem('hasMigratedToFirestore');
-      const oldQuestions = localStorage.getItem('questions');
-      const oldLinks = localStorage.getItem('finalRedirectData');
-      if (!hasMigrated && oldQuestions && oldLinks) {
-        const parsedOldQuestions = JSON.parse(oldQuestions);
-        const parsedOldLinks = JSON.parse(oldLinks);
-
-        if (parsedOldQuestions.length > 0) {
-          console.log("Migrating old local storage data to Firestore...");
-          const migratedFunnelData: FunnelData = {
-            ...defaultFunnelData,
-            questions: parsedOldQuestions,
-            finalRedirectLink: parsedOldLinks.finalRedirectLink || '',
-            tracking: parsedOldLinks.tracking || '',
-            conversionGoal: parsedOldLinks.conversionGoal || 'Product Purchase',
-          };
-
-          await addDoc(funnelsCollectionRef, {
-            name: "Migrated Funnel (from LocalStorage)",
-            data: migratedFunnelData,
-          });
-
-          localStorage.setItem('hasMigratedToFirestore', 'true');
-          alert('Old quiz data migrated to Firestore! Please refresh.');
-          window.location.reload();
-        }
-      }
-
       setFunnels(loadedFunnels);
     } catch (error) {
       console.error("Error fetching funnels:", error);
-      alert("Failed to load funnels from database. Check console for details.");
+      alert("Failed to load funnels from database.");
     }
   }, [db]);
-   useEffect(() => {
-  if (uid) {
-    getFunnels();
-  }
-}, [uid, getFunnels]);
-   useEffect(() => {
+
+  // 🔁 登录并监听 UID
+  useEffect(() => {
     const auth = getAuth();
     const unsubscribe = auth.onAuthStateChanged((user) => {
       if (user) {
         setUid(user.uid);
-        console.log("✅ 登录成功 UID:", user.uid);
       }
     });
     return () => unsubscribe();
   }, []);
-  const createFunnel = async (name: string) => {
-  if (!db) return;
-  const auth = getAuth();
-  const user = auth.currentUser;
 
-  if (!user) {
-    alert("⚠️ 未登录，无法创建漏斗");
-    return;
-  }
-
-  const funnelsCollectionRef = collection(db, 'funnels');
-
-  try {
-    const newFunnelRef = await addDoc(funnelsCollectionRef, {
-      name: name,
-      data: defaultFunnelData,
-      uid: user.uid  // ✅ 添加 UID 字段
+  // 🔁 自动匿名登录
+  useEffect(() => {
+    const auth = getAuth();
+    signInAnonymously(auth).catch((error) => {
+      alert("匿名登录失败：" + error.message);
     });
-    alert(`Funnel "${name}" created!`);
-    await getFunnels();
-    navigate(`/edit/${newFunnelRef.id}`);
-  } catch (error) {
-    console.error("Error creating funnel:", error);
-    alert("Failed to create funnel. Check console for details.");
-  }
-};
+  }, []);
 
+  // 🔨 创建漏斗
+  const createFunnel = async (name: string) => {
+    if (!db || !uid) return;
+    const funnelsCollectionRef = collection(db, 'funnels');
+    try {
+      const newFunnelRef = await addDoc(funnelsCollectionRef, {
+        name: name,
+        data: defaultFunnelData,
+        uid: uid
+      });
+      alert(`Funnel "${name}" created!`);
+      await getFunnels();
+      navigate(`/edit/${newFunnelRef.id}`);
+    } catch (error) {
+      console.error("Error creating funnel:", error);
+    }
+  };
+
+  // 🔨 删除漏斗
   const deleteFunnel = async (funnelId: string) => {
-    if (window.confirm("Are you sure you want to delete this funnel? This action cannot be undone.")) {
+    if (!db) return;
+    if (window.confirm("Are you sure you want to delete this funnel?")) {
       try {
         const funnelDoc = doc(db, 'funnels', funnelId);
         await deleteDoc(funnelDoc);
-        alert('Funnel deleted!');
+        alert("Funnel deleted.");
         await getFunnels();
-        navigate('/');
+        navigate("/");
       } catch (error) {
         console.error("Error deleting funnel:", error);
-        alert("Failed to delete funnel. Check console for details.");
       }
     }
   };
 
+  // 🔨 更新漏斗数据
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
+    if (!db || !uid) return;
+    try {
+      const funnelDoc = doc(db, 'funnels', funnelId);
+      await updateDoc(funnelDoc, {
+        data: newData,
+        uid: uid
+      });
+      console.log("✅ Funnel updated:", funnelId);
+    } catch (error) {
+      console.error("Error updating funnel:", error);
+    }
+  };
 
-  if (!user) {
-  // alert("⚠️ 未登录，无法保存数据");
-    return;
+  // 🔒 未输入密码前显示登录页面
+  if (!entered) {
+    return (
+      <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
+        <h2>🔐 请输入访问密码</h2>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="Enter password"
+          style={{ padding: 10, fontSize: 16, marginRight: 10 }}
+        />
+        <button onClick={handleCheckPassword} style={{ padding: '10px 20px', fontSize: 16 }}>
+          进入
+        </button>
+      </div>
+    );
   }
-
-  try {
-    const funnelDoc = doc(db, 'funnels', funnelId);
-    await updateDoc(funnelDoc, {
-      data: newData,
-      uid: user.uid  // ✅ 保证更新时仍带有 uid 字段
-    });
-    console.log("FunnelEditor: Data saved to Firestore successfully for funnel:", funnelId);
-    await getFunnels();
-  } catch (error) {
-    console.error("Error updating funnel:", error);
-   // alert("Failed to save funnel data to cloud. Check console for details.");
-  }
-};
 
   return (
-     <div style={{ padding: 24, fontFamily: 'Arial' }}>
-      {/* ✅ 登录按钮 */}
-    <button onClick={handleGitHubLogin} style={{ marginBottom: 12 }}>
-  使用 GitHub 登录
-
-    </button>
-       {/* ✅ 显示 UID */}
-    {uid ? (
-      <p style={{ color: 'green' }}>
-        Logged in UID: <code>{uid}</code>
-      </p>
-    ) : (
-      <p style={{ color: 'gray' }}>Logging in anonymously...</p>
-    )}
-
-    {/* 原来的路由结构不动 */}
-    <Routes>
-      <Route path="/" element={<FunnelDashboard db={db} funnels={funnels} setFunnels={setFunnels} createFunnel={createFunnel} deleteFunnel={deleteFunnel} />} />
-      <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
-      <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
-      <Route path="*" element={<h2>404 Not Found</h2>} />
-    </Routes>
+    <div style={{ padding: 24, fontFamily: 'Arial' }}>
+      {uid ? (
+        <p style={{ color: 'green' }}>
+          Logged in UID: <code>{uid}</code>
+        </p>
+      ) : (
+        <p style={{ color: 'gray' }}>Logging in anonymously...</p>
+      )}
+      <Routes>
+        <Route path="/" element={
+          <FunnelDashboard
+            db={db}
+            funnels={funnels}
+            setFunnels={setFunnels}
+            createFunnel={createFunnel}
+            deleteFunnel={deleteFunnel}
+          />
+        } />
+        <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
+        <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
+      </Routes>
     </div>
-);
+  );
 }
 export function AppWrapper(props: AppProps) {
   const [entered, setEntered] = useState(false);
