@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { HashRouter } from 'react-router-dom'; 
-import { AppWrapper } from './App.tsx';
+import { App } from './App.tsx';
 import './index.css';
 
 // Firebase imports
@@ -30,7 +30,7 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 root.render(
   <React.StrictMode>
     <HashRouter> 
-      <AppWrapper db={db} />
+      <App db={db} />
     </HashRouter>
   </React.StrictMode>
 );
