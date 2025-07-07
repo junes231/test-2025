@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { useNavigate, useParams, HashRouter, Routes, Route } from 'react-router-dom';
+import { useNavigate, useParams, Routes, Route, link } from 'react-router-dom';
 import {
   collection,
   doc,
@@ -8,11 +8,11 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+ Firestore
   query,
   where,
   getDoc
 } from 'firebase/firestore';
-import type { Firestore } from 'firebase/firestore'; // ✅ 正确引入类型
 import './App.css';
 
 interface Answer {
@@ -221,7 +221,7 @@ export default function App({ db }: AppProps) {
   }
 
   return (
-    <HashRouter>
+    
        <div style={{ padding: 24, fontFamily: 'Arial' }}>
       {isEditorPath && uid ? (
         <p style={{ color: 'green' }}>
@@ -248,7 +248,7 @@ export default function App({ db }: AppProps) {
         <Route path="*" element={<h2>404 Not Found</h2>} />
       </Routes>
     </div>
-    </HashRouter>
+    
       );
 }
 
