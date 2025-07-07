@@ -8,7 +8,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
- Firestore
+ Firestore,
   query,
   where,
   getDoc
