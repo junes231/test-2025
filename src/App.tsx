@@ -1,20 +1,18 @@
-<DOCUMENT filename="App.tsx">
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
-import type { Firestore } from 'firebase/firestore';
-  import {
+import {
   collection,
   doc,
   addDoc,
   getDocs,
   updateDoc,
   deleteDoc,
-  
   query,
   where,
   getDoc
 } from 'firebase/firestore';
+import type { Firestore } from 'firebase/firestore'; // ✅ 正确引入类型
 import './App.css';
 
 interface Answer {
@@ -1228,4 +1226,4 @@ const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
     </div>
   );
 };
-</DOCUMENT>
+
