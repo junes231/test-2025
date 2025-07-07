@@ -701,34 +701,34 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [clickedAnswerIndex, setClickedAnswerIndex] = useState<number | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getFunnelForPlay = async () => {
       if (!funnelId) {
         setError('No funnel ID provided!');
-        setIsLoading(false);
         return;
       }
-      setIsLoading(true);
-      setError(null);
+
       try {
         const funnelDocRef = doc(db, 'funnels', funnelId);
         const funnelDoc = await getDoc(funnelDocRef);
         if (funnelDoc.exists()) {
           const funnel = funnelDoc.data() as Funnel;
-          setFunnelData({ ...defaultFunnelData, ...funnel.data });
-          console.log('QuizPlayer: Loaded funnel data for play:', funnel.data);
-          console.log('QuizPlayer: Loaded finalRedirectLink for play:', funnel.data.finalRedirectLink);
+          const mergedData = { ...defaultFunnelData, ...funnel.data };
+
+          if (!mergedData.questions || mergedData.questions.length === 0) {
+            setError('This funnel has no questions.');
+            return;
+          }
+
+          setFunnelData(mergedData);
         } else {
           setError('Funnel not found! Please check the link or contact the funnel creator.');
         }
       } catch (err) {
         console.error('Error loading funnel for play:', err);
         setError('Failed to load quiz. Please check your internet connection and Firebase rules.');
-      } finally {
-        setIsLoading(false);
       }
     };
     getFunnelForPlay();
@@ -746,7 +746,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
       if (!funnelData || funnelData.questions.length === 0) return;
 
-      if (currentQuestionIndex === 5 && funnelData.questions.length === 6) {
+      const isLastQuestion = currentQuestionIndex === funnelData.questions.length - 1;
+
+      if (isLastQuestion) {
         let redirectLink = funnelData.finalRedirectLink || 'https://example.com/default-final-redirect-link';
 
         if (funnelData.tracking && funnelData.tracking.trim() !== '') {
@@ -754,20 +756,27 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
           redirectLink = `${redirectLink}${hasQueryParams ? '&' : '?'}${funnelData.tracking.trim()}`;
         }
 
-        console.log('QuizPlayer: Attempting redirect to:', redirectLink);
+        console.log('QuizPlayer: Redirecting to:', redirectLink);
         window.location.href = redirectLink;
         return;
       }
 
-      if (currentQuestionIndex < funnelData.questions.length - 1) {
-        setCurrentQuestionIndex(currentQuestionIndex + 1);
-      } else {
-        alert('Quiz complete! No more questions.');
-      }
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }, 500);
   };
 
-  if (isLoading) {
+  // 显示错误页面
+  if (error) {
+    return (
+      <div className="quiz-player-container">
+        <h2>Error</h2>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  // 显示加载提示（仅当未加载数据但无 error）
+  if (!funnelData) {
     return (
       <div className="quiz-player-container">
         <h2>Loading Quiz...</h2>
@@ -776,24 +785,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="quiz-player-container">
-        <h2>Error Loading Quiz</h2>
-        <p className="error-message">{error}</p>
-      </div>
-    );
-  }
-
-  if (!funnelData || funnelData.questions.length === 0 || funnelData.questions.length < 6) {
-    return (
-      <div className="quiz-player-container">
-        <h2>Quiz Not Ready</h2>
-        <p>This funnel either has no questions or fewer than the required 6 questions. Please contact the funnel creator.</p>
-      </div>
-    );
-  }
-
+  // Quiz 主体内容
   const currentQuestion = funnelData.questions[currentQuestionIndex];
 
   const quizPlayerContainerStyle = {
@@ -808,10 +800,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
       <h2 style={{ color: 'var(--text-color)' }}>
-        <span role="img" aria-label="quiz">
-          ❓
-        </span>{' '}
-        Quiz Time!
+        <span role="img" aria-label="quiz">❓</span> Quiz Time!
       </h2>
       <div className="progress-bar-container" style={{ backgroundColor: 'color-mix(in srgb, var(--button-color) 70%, transparent)' }}>
         <div
@@ -828,7 +817,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
       <div className="quiz-answers-container">
         {currentQuestion.answers.map((answer, index) => (
           <button
-            key={answer.id}
+            key={answer.id || index}
             className={`quiz-answer-button ${clickedAnswerIndex === index ? 'selected-answer animating' : ''}`}
             onClick={() => handleAnswerClick(index)}
             disabled={isAnimating}
