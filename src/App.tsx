@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
+import { useNavigate, useParams, HashRouter, Routes, Route } from 'react-router-dom';
 import {
   collection,
   doc,
