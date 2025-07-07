@@ -248,7 +248,7 @@ export default function App({ db }: AppProps) {
         <Route path="*" element={<h2>404 Not Found</h2>} />
       </Routes>
     </div>
-     <HashRouter>
+    </HashRouter>
       );
 }
 
