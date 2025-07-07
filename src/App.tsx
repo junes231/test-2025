@@ -2,14 +2,15 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
-import {
+import type { Firestore } from 'firebase/firestore';
+  import {
   collection,
   doc,
   addDoc,
   getDocs,
   updateDoc,
   deleteDoc,
-  Firestore,
+  
   query,
   where,
   getDoc
