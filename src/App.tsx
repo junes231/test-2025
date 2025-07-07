@@ -222,7 +222,8 @@ export default function App({ db }: AppProps) {
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: 'Arial' }}>
+    <HashRouter>
+       <div style={{ padding: 24, fontFamily: 'Arial' }}>
       {isEditorPath && uid ? (
         <p style={{ color: 'green' }}>
           Logged in UID: <code>{uid}</code>
@@ -248,7 +249,8 @@ export default function App({ db }: AppProps) {
         <Route path="*" element={<h2>404 Not Found</h2>} />
       </Routes>
     </div>
-  );
+     <HashRouter>
+      );
 }
 
 interface FunnelDashboardProps {
