@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
+import PasswordPrompt from './components/PasswordPrompt';
 import { useNavigate, useParams, Routes, Route, link } from 'react-router-dom';
 import {
   collection,
@@ -60,6 +61,15 @@ const defaultFunnelData: FunnelData = {
 };
 
 export default function App({ db }: AppProps) {
+ const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
+  localStorage.getItem('passwordVerified') === 'true'
+);
+
+const handlePasswordSuccess = () => {
+  localStorage.setItem('passwordVerified', 'true');
+  setIsPasswordVerified(true);
+  signInAnonymously(auth); // 匿名登录
+};
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
@@ -232,17 +242,21 @@ export default function App({ db }: AppProps) {
       ) : null}
       <Routes>
         <Route
-          path="/"
-          element={
-            <FunnelDashboard
-              db={db}
-              funnels={funnels}
-              setFunnels={setFunnels}
-              createFunnel={createFunnel}
-              deleteFunnel={deleteFunnel}
-            />
-          }
-        />
+  path="/"
+  element={
+    isPasswordVerified ? (
+      <FunnelDashboard
+        db={db}
+        funnels={funnels}
+        setFunnels={setFunnels}
+        createFunnel={createFunnel}
+        deleteFunnel={deleteFunnel}
+      />
+    ) : (
+      <PasswordPrompt onSuccess={handlePasswordSuccess} />
+    )
+  }
+/>
         <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
         <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
         <Route path="*" element={<h2>404 Not Found</h2>} />
