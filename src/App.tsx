@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import PasswordPrompt from './components/PasswordPrompt';
+import PasswordPrompt from './components/PasswordPrompt.tsx';
 import { useNavigate, useParams, Routes, Route, link } from 'react-router-dom';
 import {
   collection,
