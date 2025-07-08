@@ -10,7 +10,7 @@ const PasswordPrompt: React.FC<PasswordPromptProps> = ({ onSuccess }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const correctPassword = 'myFunnel888musk'; // ← 你可以改成你自己的密码
+    const correctPassword = 'myFunnel888musk'; // ← 你可以替换成自己的密码
 
     if (password === correctPassword) {
       localStorage.setItem('passwordVerified', 'true');
@@ -26,17 +26,29 @@ const PasswordPrompt: React.FC<PasswordPromptProps> = ({ onSuccess }) => {
       <form onSubmit={handleSubmit}>
         <input
           type="password"
+          placeholder="Enter password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter password"
-          style={{ padding: 8, width: 200 }}
+          style={{
+            padding: '10px',
+            fontSize: '16px',
+            width: '250px',
+            marginBottom: '10px',
+          }}
         />
-        <br /><br />
-        <button type="submit" style={{ padding: '8px 16px' }}>
+        <br />
+        <button
+          type="submit"
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+        >
           Submit
         </button>
+        {error && <p style={{ color: 'red', marginTop: 10 }}>{error}</p>}
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
     </div>
   );
 };
