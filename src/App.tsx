@@ -821,23 +821,8 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
 
   return (
     <div className="quiz-player-container" style={quizPlayerContainerStyle}>
-      <h2 style={{ color: 'var(--text-color)' }}>
-        <span role="img" aria-label="quiz">
-          ❓
-        </span>{' '}
-        Quiz Time!
-      </h2>
-      <div className="progress-bar-container" style={{ backgroundColor: 'color-mix(in srgb, var(--button-color) 70%, transparent)' }}>
-        <div
-          className="progress-bar"
-          style={{ width: `${((currentQuestionIndex + 1) / funnelData.questions.length) * 100}%`, backgroundColor: 'var(--primary-color)' }}
-        ></div>
-      </div>
-      <p style={{ color: 'var(--text-color)' }}>
-        Question {currentQuestionIndex + 1} / {funnelData.questions.length}
-      </p>
-
-      <h3 style={{ color: 'var(--text-color)' }}>{currentQuestion.title}</h3>
+      
+    <h3 style={{ color: 'var(--text-color)' }}>{currentQuestion.title}</h3>
 
       <div className="quiz-answers-container">
         {currentQuestion.answers.map((answer, index) => (
