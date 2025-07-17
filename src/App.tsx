@@ -782,13 +782,21 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   };
 
   if (isLoading) {
-    return (
-      <div className="quiz-player-container">
-        <h2>Loading Quiz...</h2>
-        <p>Please wait while your quiz loads.</p>
-      </div>
-    );
-  }
+  return (
+    <div className="quiz-player-container" style={{ textAlign: 'center', marginTop: '80px' }}>
+      <h2
+        style={{
+          fontSize: '32px',
+          fontWeight: 'bold',
+          color: '#ff4f81',
+          animation: 'pulse 1.5s infinite',
+        }}
+      >
+        Ready to unlock your secret match? 🔥
+      </h2>
+    </div>
+  );
+}
 
   if (error) {
     return (
