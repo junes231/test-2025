@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Marketing Funnel Editor with React + TypeScript",
   "private": true,
-  "homepage": "https://junes231.github.io/funnel-editor/",
+  "homepage": "https://junes231.github.io/funnel-editor-2025/",
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
