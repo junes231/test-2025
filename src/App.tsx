@@ -81,7 +81,7 @@ const handlePasswordSuccess = () => {
     if (password === 'myFunnel888yong') {
       setEntered(true);
     } else {
-      alert('❌ 密码错误，请重试。');
+      alert('❌ Wrong password, please try again。');
     }
   };
 
@@ -156,8 +156,8 @@ const handlePasswordSuccess = () => {
         }
       })
       .catch((error) => {
-        console.error('匿名登录失败：', error);
-        alert('匿名登录失败：' + error.message);
+        console.error('Anonymous login failed：', error);
+        alert('Anonymous login failed：' + error.message);
       });
   }, []);
 
@@ -215,7 +215,7 @@ const handlePasswordSuccess = () => {
   if (isEditorPath && !entered) {
     return (
       <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
-        <h2>🔐 请输入访问密码</h2>
+        <h2>🔐 Please enter the access password</h2>
         <input
           type="password"
           value={password}
