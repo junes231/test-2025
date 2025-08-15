@@ -61,24 +61,32 @@ const defaultFunnelData: FunnelData = {
 };
 
 export default function App({ db }: AppProps) {
+  // ---- 顶层 Hook ----
+  const navigate = useNavigate();
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
+  const [uid, setUid] = useState<string | null>(null);
   const [entered, setEntered] = useState(false);
   const [password, setPassword] = useState('');
-  const [uid, setUid] = useState<string | null>(null);
-  const [funnels, setFunnels] = useState<Funnel[]>([]);
+
   const auth = getAuth();
 
+  // ---- 函数逻辑 ----
   const handleCheckPassword = () => {
     if (password === 'myFunnel888yong') setEntered(true);
     else alert('❌ Wrong password');
   };
 
   const handlePasswordSuccess = () => {
-    signInAnonymously(auth).then((userCredential) => setUid(userCredential.user.uid));
+    signInAnonymously(auth)
+      .then((userCredential) => setUid(userCredential.user.uid))
+      .catch((error) => alert('Anonymous login failed'));
   };
 
-  const isEditorPath = window.location.pathname === '/' || window.location.pathname.startsWith('/edit/');
-  
-  // 🔒 条件渲染密码输入界面
+  const isEditorPath =
+    window.location.pathname === '/' ||
+    window.location.pathname.startsWith('/edit/');
+
+  // ---- 条件渲染 ----
   if (isEditorPath && !entered) {
     return (
       <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
@@ -90,14 +98,17 @@ export default function App({ db }: AppProps) {
           placeholder="Enter password"
           style={{ padding: 10, fontSize: 16, marginRight: 10 }}
         />
-        <button onClick={handleCheckPassword} style={{ padding: '10px 20px', fontSize: 16 }}>
+        <button
+          onClick={handleCheckPassword}
+          style={{ padding: '10px 20px', fontSize: 16 }}
+        >
           进入
         </button>
       </div>
     );
   }
 
-  // 其他页面渲染
+  // ---- 正常页面渲染 ----
   return (
     <div>
       <h1>Funnel Editor</h1>
