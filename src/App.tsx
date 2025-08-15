@@ -234,9 +234,9 @@ const handlePasswordSuccess = () => {
     
        <div style={{ padding: 24, fontFamily: 'Arial' }}>
       {isEditorPath && uid ? (
-       // <p style={{ color: 'green' }}>//
-         // Logged in UID: <code>{uid}</code>//
-        </p>
+       // <p style={{ color: 'green' }}>
+         // Logged in UID: <code>{uid}</code>
+        // </p>
       ) : isEditorPath ? (
         <p style={{ color: 'gray' }}>Logging in anonymously...</p>
       ) : null}
