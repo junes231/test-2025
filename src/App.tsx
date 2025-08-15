@@ -87,25 +87,26 @@ const handlePasswordSuccess = () => {
 
   // 🔁 获取漏斗数据
   const getFunnels = useCallback(async () => {
-    if (!db) return;
-    const funnelsCollectionRef = collection(db, 'funnels');
-    try {
-      const data = await getDocs(funnelsCollectionRef);
-      const loadedFunnels = data.docs.map((doc) => {
-        const docData = doc.data() as Partial<Funnel>;
-        const funnelWithDefaultData: Funnel = {
-          ...(docData as Funnel),
-          id: doc.id,
-          data: { ...defaultFunnelData, ...docData.data },
-        };
-        return funnelWithDefaultData;
-      });
-      setFunnels(loadedFunnels);
-    } catch (error) {
-      console.error('Error fetching funnels:', error);
-      alert('Failed to load funnels from database.');
-    }
-  }, [db]);
+  if (!db || !uid) return; // uid 也要判断
+  const funnelsCollectionRef = collection(db, "funnels");
+  const q = query(funnelsCollectionRef, where("ownerId", "==", uid)); // 加上 ownerId 过滤
+  try {
+    const data = await getDocs(q);
+    const loadedFunnels = data.docs.map((doc) => {
+      const docData = doc.data() as Partial<Funnel>;
+      const funnelWithDefaultData: Funnel = {
+        ...(docData as Funnel),
+        id: doc.id,
+        data: { ...defaultFunnelData, ...docData.data },
+      };
+      return funnelWithDefaultData;
+    });
+    setFunnels(loadedFunnels);
+  } catch (error) {
+    console.error("Error fetching funnels:", error);
+    alert("Failed to load funnels from database.");
+  }
+}, [db, uid]);
 
   // 🔁 登录并监听 UID
   useEffect(() => {
