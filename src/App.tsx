@@ -170,6 +170,7 @@ const handlePasswordSuccess = () => {
         name: name,
         data: defaultFunnelData,
         uid: uid,
+        ownerId: uid,
       });
       alert(`Funnel "${name}" created!`);
       await getFunnels();
