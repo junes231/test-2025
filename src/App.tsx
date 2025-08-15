@@ -108,21 +108,15 @@ const handlePasswordSuccess = () => {
   }, [db]);
 
   // 🔁 登录并监听 UID
-  
   useEffect(() => {
-  const auth = getAuth();
-  signInAnonymously(auth)
-    .then(() => {
-      onAuthStateChanged(auth, (user) => {
-        if (user) {
-          setUid(user.uid);
-        } else {
-          setUid(null);
-        }
-      });
-    })
-    .catch((error) => console.error('Anonymous login failed:', error));
-}, []);
+    const auth = getAuth();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setUid(user.uid);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   // ✅ 修复旧漏斗数据（给没有 uid 的文档加上 uid 字段）
   useEffect(() => {
@@ -152,20 +146,21 @@ const handlePasswordSuccess = () => {
 
   // 🔁 自动匿名登录
   useEffect(() => {
-  const auth = getAuth();
-  signInAnonymously(auth)
-    .then(() => {
-      const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const auth = getAuth();
+    signInAnonymously(auth)
+      .then(() => {
+        const user = auth.currentUser;
         if (user) {
           setUid(user.uid);
-        } else {
-          setUid(null);
+          console.log('匿名登录成功：', user.uid);
         }
+      })
+      .catch((error) => {
+        console.error('匿名登录失败：', error);
+        alert('匿名登录失败：' + error.message);
       });
-      return () => unsubscribe();
-    })
-    .catch((error) => console.error('Login failed:', error));
-}, []);
+  }, []);
+
   // 🔨 创建漏斗
   const createFunnel = async (name: string) => {
     if (!db || !uid) return;
@@ -236,39 +231,39 @@ const handlePasswordSuccess = () => {
   }
 
   return (
-  <div style={{ padding: 24, fontFamily: 'Arial' }}>
-    {isEditorPath && process.env.REACT_APP_SHOW_UID === 'true' && uid ? (
-      <p style={{ color: 'green' }}>
-        Logged in UID: <code>{uid}</code>
-      </p>
-    ) : isEditorPath && uid ? (
-      <p style={{ color: 'gray' }}>UID available but hidden</p>
-    ) : isEditorPath ? (
-      <p style={{ color: 'gray' }}>Logging in anonymously...</p>
-    ) : null}
-    <Routes>
-      <Route
-        path="/"
-        element={
-          isPasswordVerified ? (
-            <FunnelDashboard
-              db={db}
-              funnels={funnels}
-              setFunnels={setFunnels}
-              createFunnel={createFunnel}
-              deleteFunnel={deleteFunnel}
-            />
-          ) : (
-            <PasswordPrompt onSuccess={handlePasswordSuccess} />
-          )
-        }
+    
+       <div style={{ padding: 24, fontFamily: 'Arial' }}>
+      {isEditorPath && uid ? (
+        <p style={{ color: 'green' }}>
+          Logged in UID: <code>{uid}</code>
+        </p>
+      ) : isEditorPath ? (
+        <p style={{ color: 'gray' }}>Logging in anonymously...</p>
+      ) : null}
+      <Routes>
+        <Route
+  path="/"
+  element={
+    isPasswordVerified ? (
+      <FunnelDashboard
+        db={db}
+        funnels={funnels}
+        setFunnels={setFunnels}
+        createFunnel={createFunnel}
+        deleteFunnel={deleteFunnel}
       />
-      <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
-      <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
-      <Route path="*" element={<h2>404 Not Found</h2>} />
-    </Routes>
-  </div>
-);
+    ) : (
+      <PasswordPrompt onSuccess={handlePasswordSuccess} />
+    )
+  }
+/>
+        <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
+        <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
+      </Routes>
+    </div>
+    
+      );
 }
 
 interface FunnelDashboardProps {
