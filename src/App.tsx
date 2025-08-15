@@ -9,10 +9,10 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
- Firestore,
   query,
   where,
-  getDoc
+  getDoc,
+  onSnapshot,  // 新增
 } from 'firebase/firestore';
 import './App.css';
 
