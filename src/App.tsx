@@ -110,16 +110,18 @@ const handlePasswordSuccess = () => {
   // 🔁 登录并监听 UID
   
   useEffect(() => {
-  if (process.env.REACT_APP_SHOW_UID !== 'true') return;
   const auth = getAuth();
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
-    if (user) {
-      setUid(user.uid);
-    } else {
-      setUid(null);
-    }
-  });
-  return () => unsubscribe();
+  signInAnonymously(auth)
+    .then(() => {
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setUid(user.uid);
+        } else {
+          setUid(null);
+        }
+      });
+    })
+    .catch((error) => console.error('Anonymous login failed:', error));
 }, []);
 
   // ✅ 修复旧漏斗数据（给没有 uid 的文档加上 uid 字段）
@@ -150,12 +152,17 @@ const handlePasswordSuccess = () => {
 
   // 🔁 自动匿名登录
   useEffect(() => {
-  if (process.env.REACT_APP_SHOW_UID !== 'true') return;
   const auth = getAuth();
   signInAnonymously(auth)
     .then(() => {
-      const user = auth.currentUser;
-      if (user) setUid(user.uid);
+      const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+          setUid(user.uid);
+        } else {
+          setUid(null);
+        }
+      });
+      return () => unsubscribe();
     })
     .catch((error) => console.error('Login failed:', error));
 }, []);
@@ -234,8 +241,10 @@ const handlePasswordSuccess = () => {
       <p style={{ color: 'green' }}>
         Logged in UID: <code>{uid}</code>
       </p>
+    ) : isEditorPath && uid ? (
+      <p style={{ color: 'gray' }}>UID available but hidden</p>
     ) : isEditorPath ? (
-      <p style={{ color: 'gray' }}>Not available in static mode</p>
+      <p style={{ color: 'gray' }}>Logging in anonymously...</p>
     ) : null}
     <Routes>
       <Route
