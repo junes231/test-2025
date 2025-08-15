@@ -152,7 +152,7 @@ const handlePasswordSuccess = () => {
         const user = auth.currentUser;
         if (user) {
           setUid(user.uid);
-          console.log('匿名登录成功：', user.uid);
+          // console.log('匿名登录成功：', user.uid);//
         }
       })
       .catch((error) => {
