@@ -61,17 +61,21 @@ const defaultFunnelData: FunnelData = {
 };
 
 export default function App({ db }: AppProps) {
+  const navigate = useNavigate();
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
+  const [uid, setUid] = useState<string | null>(null);
+  const [entered, setEntered] = useState(false);
+  const [password, setPassword] = useState('');
   const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
     localStorage.getItem('passwordVerified') === 'true'
   );
-  const [uid, setUid] = useState<string | null>(null); // 新增 uid 状态
+
   const auth = getAuth();
 
   const handlePasswordSuccess = () => {
     localStorage.setItem('passwordVerified', 'true');
     setIsPasswordVerified(true);
 
-    // 匿名登录，并把 uid 保存到状态
     signInAnonymously(auth)
       .then((userCredential) => {
         setUid(userCredential.user.uid);
@@ -79,12 +83,39 @@ export default function App({ db }: AppProps) {
       })
       .catch((error) => {
         console.error("Anonymous login failed:", error);
-        alert("Anonymous login failed, please refresh the page and try again。");
+        alert("Anonymous login failed, please refresh the page and try again.");
       });
   };
 
-  // 之后可以把 uid 传给 useFunnels Hook 或其他 Firestore 查询
-  // const { funnels, createFunnel } = useFunnels(uid);
+  const handleCheckPassword = () => {
+    if (password === 'myFunnel888yong') {
+      setEntered(true);
+    } else {
+      alert('❌ Wrong password, please try again.');
+    }
+  };
+
+  const getFunnels = useCallback(async () => {
+    if (!db || !uid) return;
+    const funnelsCollectionRef = collection(db, "funnels");
+    const q = query(funnelsCollectionRef, where("ownerId", "==", uid));
+    try {
+      const data = await getDocs(q);
+      const loadedFunnels = data.docs.map((doc) => {
+        const docData = doc.data() as Partial<Funnel>;
+        const funnelWithDefaultData: Funnel = {
+          ...(docData as Funnel),
+          id: doc.id,
+          data: { ...defaultFunnelData, ...docData.data },
+        };
+        return funnelWithDefaultData;
+      });
+      setFunnels(loadedFunnels);
+    } catch (error) {
+      console.error("Error fetching funnels:", error);
+      alert("Failed to load funnels from database.");
+    }
+  }, [db, uid]);
 
   return (
     <div>
@@ -98,6 +129,8 @@ export default function App({ db }: AppProps) {
         </div>
       )}
     </div>
+  );
+}
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
