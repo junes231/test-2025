@@ -60,55 +60,81 @@ const defaultFunnelData: FunnelData = {
   textColor: '#333333',
 };
 
-export default function App({ db }: AppProps) {
-  // ---- 顶层 Hook ----
+export default function App() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
   const [entered, setEntered] = useState(false);
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const auth = getAuth();
 
-  // ---- 函数逻辑 ----
-  const handleCheckPassword = () => {
-    if (password === 'myFunnel888yong') setEntered(true);
-    else alert('❌ Wrong password');
-  };
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUid(user.uid);
+        setEntered(true);
+      } else {
+        setUid(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
-  const handlePasswordSuccess = () => {
-    signInAnonymously(auth)
-      .then((userCredential) => setUid(userCredential.user.uid))
-      .catch((error) => alert('Anonymous login failed'));
+  const handleCheckPassword = async () => {
+    if (password === 'myFunnel888yong') {
+      setIsLoading(true);
+      try {
+        const userCredential = await signInAnonymously(auth);
+        setUid(userCredential.user.uid);
+        setEntered(true);
+      } catch (error: any) {
+        console.error('Anonymous login error:', error);
+        alert(`Anonymous login failed: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    } else {
+      alert('❌ Wrong password');
+      setPassword('');
+    }
   };
 
   const isEditorPath =
-    window.location.pathname === '/' ||
-    window.location.pathname.startsWith('/edit/');
+    location.pathname === '/' || location.pathname.startsWith('/edit/');
 
-  // ---- 条件渲染 ----
   if (isEditorPath && !entered) {
     return (
       <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
         <h2>🔐 Please enter the access password</h2>
+        <label htmlFor="password" style={{ display: 'block', marginBottom: 10 }}>
+          Password
+        </label>
         <input
+          id="password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleCheckPassword();
+          }}
           placeholder="Enter password"
           style={{ padding: 10, fontSize: 16, marginRight: 10 }}
+          aria-describedby="password-error"
         />
         <button
           onClick={handleCheckPassword}
           style={{ padding: '10px 20px', fontSize: 16 }}
+          disabled={isLoading}
         >
-          进入
+          {isLoading ? 'Loading...' : '进入'}
         </button>
       </div>
     );
   }
 
-  // ---- 正常页面渲染 ----
   return (
     <div>
       <h1>Funnel Editor</h1>
