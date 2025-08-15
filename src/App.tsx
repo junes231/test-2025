@@ -61,15 +61,43 @@ const defaultFunnelData: FunnelData = {
 };
 
 export default function App({ db }: AppProps) {
- const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
-  localStorage.getItem('passwordVerified') === 'true'
-);
+  const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
+    localStorage.getItem('passwordVerified') === 'true'
+  );
+  const [uid, setUid] = useState<string | null>(null); // 新增 uid 状态
+  const auth = getAuth();
 
-const handlePasswordSuccess = () => {
-  localStorage.setItem('passwordVerified', 'true');
-  setIsPasswordVerified(true);
-  signInAnonymously(auth); // 匿名登录
-};
+  const handlePasswordSuccess = () => {
+    localStorage.setItem('passwordVerified', 'true');
+    setIsPasswordVerified(true);
+
+    // 匿名登录，并把 uid 保存到状态
+    signInAnonymously(auth)
+      .then((userCredential) => {
+        setUid(userCredential.user.uid);
+        console.log("Anonymous login successful, uid:", userCredential.user.uid);
+      })
+      .catch((error) => {
+        console.error("Anonymous login failed:", error);
+        alert("Anonymous login failed, please refresh the page and try again。");
+      });
+  };
+
+  // 之后可以把 uid 传给 useFunnels Hook 或其他 Firestore 查询
+  // const { funnels, createFunnel } = useFunnels(uid);
+
+  return (
+    <div>
+      {!isPasswordVerified && (
+        <PasswordPrompt onSuccess={handlePasswordSuccess} />
+      )}
+      {isPasswordVerified && (
+        <div>
+          <h1>Funnel Editor</h1>
+          {/* 漏斗列表和操作组件 */}
+        </div>
+      )}
+    </div>
   const navigate = useNavigate();
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [uid, setUid] = useState<string | null>(null);
