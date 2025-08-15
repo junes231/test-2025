@@ -78,7 +78,7 @@ const handlePasswordSuccess = () => {
 
   // 🔐 密码校验逻辑，仅在编辑器页面（/ 和 /edit/:funnelId）显示
   const handleCheckPassword = () => {
-    if (password === 'myFunnel888musk') {
+    if (password === 'myFunnel888yong') {
       setEntered(true);
     } else {
       alert('❌ 密码错误，请重试。');
