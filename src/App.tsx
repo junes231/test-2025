@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation, Routes, Route, useParams } from 'react-router-dom';
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, updateDoc, doc, addDoc, query, where, getDoc, deleteDoc, deleteField } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { collection, getDocs, updateDoc, doc, addDoc, query, where, getDoc, deleteDoc, deleteField } from 'firebase/firestore';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
+import { db, auth } from './index'; // 从 index.tsx 导入
 import './App.css';
+
+// 其余代码（FunnelDashboard, FunnelEditor, QuizEditorComponent 等）保持不变
 
 // Firebase 配置
 const firebaseConfig = {
