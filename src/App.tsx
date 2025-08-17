@@ -171,46 +171,6 @@ export default function App({ db }: AppProps) {
   );
 }
 
-  return (
-    
-       <div style={{ padding: 24, fontFamily: 'Arial' }}>
-     {isEditorPath && uid ? (
-  <>
-    {/*
-    <p style={{ color: 'green' }}>
-      Logged in UID: <code>{uid}</code>
-    </p>
-    */}
-  </>
-) : isEditorPath ? (
-  <p style={{ color: 'gray' }}>Logging in anonymously...</p>
-) : null}
-      <Routes>
-        <Route
-  path="/"
-  element={
-    isPasswordVerified ? (
-      <FunnelDashboard
-        db={db}
-        funnels={funnels}
-        setFunnels={setFunnels}
-        createFunnel={createFunnel}
-        deleteFunnel={deleteFunnel}
-      />
-    ) : (
-      <PasswordPrompt onSuccess={handlePasswordSuccess} />
-    )
-  }
-/>
-        <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
-        <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
-        <Route path="*" element={<h2>404 Not Found</h2>} />
-      </Routes>
-    </div>
-    
-      );
-}
-
 interface FunnelDashboardProps {
   db: Firestore;
   funnels: Funnel[];
