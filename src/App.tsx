@@ -199,19 +199,10 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   // 在 FunnelDashboard.tsx 组件中
 
 useEffect(() => {
-  // 我们不再需要复杂的 retryCount 逻辑了，
-  // 因为 React 的 effect 依赖项会更优雅地处理重试
-  const fetchFunnels = async () => {
-    
-    // --- 新增的安全检查 (NEW SAFETY CHECK) ---
-    // 在执行任何数据库操作前，确保 db 和 user 都已从父组件准备就绪
-    if (!db || !user) {
-      // 如果条件不满足，暂时什么都不做，直接退出。
-      // 等到 db 或 user 更新后，useEffect 会自动重新运行。
-      return; 
-    }
-    // --- 检查结束 ---
+  // 如果 db 或 user 还没准备好，直接跳过
+  if (!db || !user) return;
 
+  const fetchFunnels = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -221,20 +212,29 @@ useEffect(() => {
       if (isAdmin) {
         q = query(funnelsCollectionRef);
       } else {
-        q = query(funnelsCollectionRef, where("ownerId", "==", user.uid));
+        q = query(funnelsCollectionRef, where('ownerId', '==', user.uid));
       }
 
       const data = await getDocs(q);
+
       const loadedFunnels = data.docs.map((doc) => {
         const docData = doc.data() as Partial<Funnel>;
+
+        // 安全检查 docData.data
+        const funnelData =
+          docData.data && typeof docData.data === 'object'
+            ? { ...defaultFunnelData, ...docData.data }
+            : { ...defaultFunnelData };
+
         return {
           ...(docData as Funnel),
           id: doc.id,
-          data: { ...defaultFunnelData, ...docData.data },
+          data: funnelData,
         };
       });
+
       setFunnels(loadedFunnels);
-      setError(null);
+      console.log('Fetched funnels:', loadedFunnels); // 调试用
     } catch (err: any) {
       console.error('Error fetching funnels:', err);
       setError(`Failed to load funnels: ${err.message}`);
@@ -244,10 +244,7 @@ useEffect(() => {
   };
 
   fetchFunnels();
-  
-  // 依赖项现在更简洁，只依赖于核心数据
 }, [db, user, isAdmin, setFunnels]);
-
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
