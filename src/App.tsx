@@ -95,7 +95,7 @@ export default function App({ db }: AppProps) {
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
-        ownerUid: user.uid, 
+        ownerId: user.uid, 
       });
       alert(`Funnel "${name}" created!`);
       navigate(`/edit/${newFunnelRef.id}`);
