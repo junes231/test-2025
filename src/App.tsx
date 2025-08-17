@@ -14,6 +14,7 @@ import {
   where,
   getDoc
 } from 'firebase/firestore';
+import Login from './components/Login.tsx';
 import './App.css';
 
 interface Answer {
