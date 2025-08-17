@@ -196,75 +196,57 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     alert('Funnel link copied to clipboard!');
   };
 
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
+  // 在 FunnelDashboard.tsx 组件中
 
-    const fetchFunnels = async () => {
-      setIsLoading(true);
+useEffect(() => {
+  // 我们不再需要复杂的 retryCount 逻辑了，
+  // 因为 React 的 effect 依赖项会更优雅地处理重试
+  const fetchFunnels = async () => {
+    
+    // --- 新增的安全检查 (NEW SAFETY CHECK) ---
+    // 在执行任何数据库操作前，确保 db 和 user 都已从父组件准备就绪
+    if (!db || !user) {
+      // 如果条件不满足，暂时什么都不做，直接退出。
+      // 等到 db 或 user 更新后，useEffect 会自动重新运行。
+      return; 
+    }
+    // --- 检查结束 ---
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const funnelsCollectionRef = collection(db, 'funnels');
+      let q;
+      if (isAdmin) {
+        q = query(funnelsCollectionRef);
+      } else {
+        q = query(funnelsCollectionRef, where("ownerId", "==", user.uid));
+      }
+
+      const data = await getDocs(q);
+      const loadedFunnels = data.docs.map((doc) => {
+        const docData = doc.data() as Partial<Funnel>;
+        return {
+          ...(docData as Funnel),
+          id: doc.id,
+          data: { ...defaultFunnelData, ...docData.data },
+        };
+      });
+      setFunnels(loadedFunnels);
       setError(null);
+    } catch (err: any) {
+      console.error('Error fetching funnels:', err);
+      setError(`Failed to load funnels: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
-        const errMessage = 'Firebase Firestore functions not loaded or db not initialized.';
-        console.warn('FunnelDashboard:', errMessage);
-        if (retryCount < MAX_RETRIES) {
-          timeoutId = setTimeout(() => setRetryCount((prev) => prev + 1), 1000 * (retryCount + 1));
-        } else {
-          setError('CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.');
-          setIsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        const funnelsCollectionRef = collection(db, 'funnels');
-        let q; 
-        if (isAdmin) {
-        //  console.log("Fetching all funnels as Admin");//
-          q = query(funnelsCollectionRef);
-        } else {
-         // console.log("Fetching personal funnels as a regular user");//
-          q = query(funnelsCollectionRef, where("ownerUid", "==", user.uid));
-        }
-        const data = await getDocs(q);
-        const loadedFunnels = data.docs.map((doc) => {
-          const docData = doc.data() as Partial<Funnel>;
-          return {
-            ...(docData as Funnel),
-            id: doc.id,
-            data: { ...defaultFunnelData, ...docData.data },
-          };
-        });
-        setFunnels(loadedFunnels);
-        setRetryCount(0);
-        setError(null);
-      } catch (err: any) {
-        console.error('Error fetching funnels:', err);
-        let errorMessage = 'Failed to load funnels.';
-        if (err.code === 'permission-denied') {
-          errorMessage = 'Permission denied. Please check Firestore rules.';
-        } else if (err.message?.includes('No Firebase App')) {
-          errorMessage = 'Firebase App not initialized. Check config.';
-        } else if (err.message) {
-          errorMessage = `Failed to load funnels: ${err.message}`;
-        }
-
-        setError(errorMessage);
-        if (retryCount < MAX_RETRIES) {
-          timeoutId = setTimeout(() => setRetryCount((prev) => prev + 1), 1000 * (retryCount + 1));
-        } else {
-          setError(errorMessage + ' Max retries reached.');
-          setIsLoading(false);
-        }
-      } finally {
-        if (retryCount >= MAX_RETRIES || !error) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchFunnels();
-    return () => clearTimeout(timeoutId);
-  }, [db, user, isAdmin, retryCount, setFunnels]);
+  fetchFunnels();
+  
+  // 依赖项现在更简洁，只依赖于核心数据
+}, [db, user, isAdmin, setFunnels]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
