@@ -61,175 +61,115 @@ const defaultFunnelData: FunnelData = {
   textColor: '#333333',
 };
 
+// REPLACE your old App function with this new one
 export default function App({ db }: AppProps) {
- const [isPasswordVerified, setIsPasswordVerified] = useState<boolean>(
-  localStorage.getItem('passwordVerified') === 'true'
-);
-
-const handlePasswordSuccess = () => {
-  localStorage.setItem('passwordVerified', 'true');
-  setIsPasswordVerified(true);
-  signInAnonymously(auth); // 匿名登录
-};
   const navigate = useNavigate();
-  const [funnels, setFunnels] = useState<Funnel[]>([]);
-  const [uid, setUid] = useState<string | null>(null);
-  const [entered, setEntered] = useState(false);
-  const [password, setPassword] = useState('');
 
-  // 🔐 密码校验逻辑，仅在编辑器页面（/ 和 /edit/:funnelId）显示
-  const handleCheckPassword = () => {
-    if (password === 'myFunnel888yong') {
-      setEntered(true);
-    } else {
-      alert('❌ 密码错误，请重试。');
-    }
-  };
+  // New state variables to manage authentication and user roles
+  const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // 🔁 获取漏斗数据
-  const getFunnels = useCallback(async () => {
-    if (!db) return;
-    const funnelsCollectionRef = collection(db, 'funnels');
-    try {
-      const data = await getDocs(funnelsCollectionRef);
-      const loadedFunnels = data.docs.map((doc) => {
-        const docData = doc.data() as Partial<Funnel>;
-        const funnelWithDefaultData: Funnel = {
-          ...(docData as Funnel),
-          id: doc.id,
-          data: { ...defaultFunnelData, ...docData.data },
-        };
-        return funnelWithDefaultData;
-      });
-      setFunnels(loadedFunnels);
-    } catch (error) {
-      console.error('Error fetching funnels:', error);
-      alert('Failed to load funnels from database.');
-    }
-  }, [db]);
-
-  // 🔁 登录并监听 UID
+  // useEffect for Authentication and Role checking
   useEffect(() => {
     const auth = getAuth();
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (user) {
-        setUid(user.uid);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+        const idTokenResult = await currentUser.getIdTokenResult(true);
+        setIsAdmin(idTokenResult.claims.role === 'admin');
+      } else {
+        setUser(null);
+        setIsAdmin(false);
       }
+      setIsLoading(false); 
     });
-    return () => unsubscribe();
+    return () => unsubscribe(); 
   }, []);
 
-  // ✅ 修复旧漏斗数据（给没有 uid 的文档加上 uid 字段）
-  useEffect(() => {
-    const fixOldFunnels = async () => {
-      if (!db || !uid) return;
-
-      const funnelsCollectionRef = collection(db, 'funnels');
-      const snapshot = await getDocs(funnelsCollectionRef);
-      const updates = [];
-
-      snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (!data.uid) {
-          const docRef = doc(db, 'funnels', docSnap.id);
-          updates.push(updateDoc(docRef, { uid }));
-        }
-      });
-
-      if (updates.length > 0) {
-        await Promise.all(updates);
-        console.log('✅ 所有旧漏斗数据已补上 uid 字段');
-      }
-    };
-
-    fixOldFunnels();
-  }, [uid, db]);
-
-  // 🔁 自动匿名登录
-  useEffect(() => {
-    const auth = getAuth();
-    signInAnonymously(auth)
-      .then(() => {
-        const user = auth.currentUser;
-        if (user) {
-          setUid(user.uid);
-          // console.log('匿名登录成功：', user.uid);//
-        }
-      })
-      .catch((error) => {
-        console.error('匿名登录失败：', error);
-        alert('匿名登录失败：' + error.message);
-      });
-  }, []);
-
-  // 🔨 创建漏斗
+  // --- CRUD Functions (These should be inside the App component) ---
   const createFunnel = async (name: string) => {
-    if (!db || !uid) return;
+    if (!db || !user) return; 
     const funnelsCollectionRef = collection(db, 'funnels');
     try {
       const newFunnelRef = await addDoc(funnelsCollectionRef, {
         name: name,
         data: defaultFunnelData,
-        uid: uid,
+        ownerUid: user.uid, 
       });
       alert(`Funnel "${name}" created!`);
-      await getFunnels();
       navigate(`/edit/${newFunnelRef.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating funnel:', error);
+      alert(`Failed to create funnel: ${error.message}`);
     }
   };
 
-  // 🔨 删除漏斗
   const deleteFunnel = async (funnelId: string) => {
-    if (!db) return;
+    if (!db || !user) return;
     if (window.confirm('Are you sure you want to delete this funnel?')) {
       try {
         const funnelDoc = doc(db, 'funnels', funnelId);
         await deleteDoc(funnelDoc);
         alert('Funnel deleted.');
-        await getFunnels();
         navigate('/');
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error deleting funnel:', error);
+        alert(`Failed to delete funnel: ${error.message}`);
       }
     }
   };
 
-  // 🔨 更新漏斗数据
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
-    if (!db || !uid) return;
+    if (!db || !user) return;
     try {
       const funnelDoc = doc(db, 'funnels', funnelId);
-      await updateDoc(funnelDoc, {
-        data: newData,
-        uid: uid,
-      });
+      await updateDoc(funnelDoc, { data: newData });
       console.log('✅ Funnel updated:', funnelId);
     } catch (error) {
       console.error('Error updating funnel:', error);
     }
   };
 
-  // 🔒 仅在编辑器页面（/ 或 /edit/:funnelId）显示密码验证
-  const isEditorPath = window.location.pathname === '/' || window.location.pathname.startsWith('/edit/');
-  if (isEditorPath && !entered) {
-    return (
-      <div style={{ padding: 40, fontFamily: 'Arial', textAlign: 'center' }}>
-        <h2>🔐 请输入访问密码</h2>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Enter password"
-          style={{ padding: 10, fontSize: 16, marginRight: 10 }}
-        />
-        <button onClick={handleCheckPassword} style={{ padding: '10px 20px', fontSize: 16 }}>
-          进入
-        </button>
-      </div>
-    );
+  // --- Render Logic ---
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
   }
+
+  if (!user) {
+    return <Login />; 
+  }
+
+  return (
+    <div style={{ padding: 24, fontFamily: 'Arial' }}>
+      <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>
+          Welcome, <strong>{user.email}</strong>!
+          {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
+        </span>
+        <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
+      </div>
+      
+      <Routes>
+        <Route
+          path="/"
+          element={
+            <FunnelDashboard
+              db={db}
+              user={user}
+              isAdmin={isAdmin}
+              createFunnel={createFunnel}
+              deleteFunnel={deleteFunnel}
+            />
+          }
+        />
+        <Route path="/edit/:funnelId" element={<FunnelEditor db={db} updateFunnelData={updateFunnelData} />} />
+        <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
+      </Routes>
+    </div>
+  );
+}
 
   return (
     
