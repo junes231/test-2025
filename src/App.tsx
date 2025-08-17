@@ -182,72 +182,125 @@ interface FunnelDashboardProps {
 }
 
 // REPLACE your old FunnelDashboard component with this new one
-const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, createFunnel, deleteFunnel }) => {
-  const [funnels, setFunnels] = useState<Funnel[]>([]);
+const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, funnels, setFunnels, createFunnel, deleteFunnel }) => {
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 5;
+
+  const handleCopyLink = (funnelId: string) => {
+    const url = `${window.location.origin}/funnel-editor/#/play/${funnelId}`;
+    navigator.clipboard.writeText(url);
+    alert('Funnel link copied to clipboard!');
+  };
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const fetchFunnels = async () => {
       setIsLoading(true);
       setError(null);
-      if (!user) {
-        setIsLoading(false);
+
+      if (!db || !db.app || typeof collection !== 'function' || typeof getDocs !== 'function') {
+        const errMessage = 'Firebase Firestore functions not loaded or db not initialized.';
+        console.warn('FunnelDashboard:', errMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => setRetryCount((prev) => prev + 1), 1000 * (retryCount + 1));
+        } else {
+          setError('CRITICAL: Firebase not initialized after multiple retries. Check index.tsx config and network.');
+          setIsLoading(false);
+        }
         return;
       }
+
       try {
         const funnelsCollectionRef = collection(db, 'funnels');
         let q; 
         if (isAdmin) {
-          console.log("Fetching all funnels as Admin");
+        //  console.log("Fetching all funnels as Admin");//
           q = query(funnelsCollectionRef);
         } else {
-          console.log("Fetching personal funnels as a regular user");
+         // console.log("Fetching personal funnels as a regular user");//
           q = query(funnelsCollectionRef, where("ownerUid", "==", user.uid));
         }
         const data = await getDocs(q);
-        const loadedFunnels = data.docs.map((doc) => ({
-          ...(doc.data() as Funnel),
-          id: doc.id,
-          data: { ...defaultFunnelData, ...doc.data().data },
-        }));
+        const loadedFunnels = data.docs.map((doc) => {
+          const docData = doc.data() as Partial<Funnel>;
+          return {
+            ...(docData as Funnel),
+            id: doc.id,
+            data: { ...defaultFunnelData, ...docData.data },
+          };
+        });
         setFunnels(loadedFunnels);
+        setRetryCount(0);
+        setError(null);
       } catch (err: any) {
-        console.error('Failed to fetch funnels:', err);
-        setError(`Failed to load data: ${err.message}. Please check Firestore security rules.`);
+        console.error('Error fetching funnels:', err);
+        let errorMessage = 'Failed to load funnels.';
+        if (err.code === 'permission-denied') {
+          errorMessage = 'Permission denied. Please check Firestore rules.';
+        } else if (err.message?.includes('No Firebase App')) {
+          errorMessage = 'Firebase App not initialized. Check config.';
+        } else if (err.message) {
+          errorMessage = `Failed to load funnels: ${err.message}`;
+        }
+
+        setError(errorMessage);
+        if (retryCount < MAX_RETRIES) {
+          timeoutId = setTimeout(() => setRetryCount((prev) => prev + 1), 1000 * (retryCount + 1));
+        } else {
+          setError(errorMessage + ' Max retries reached.');
+          setIsLoading(false);
+        }
       } finally {
-        setIsLoading(false);
+        if (retryCount >= MAX_RETRIES || !error) {
+          setIsLoading(false);
+        }
       }
     };
+
     fetchFunnels();
-  }, [db, user, isAdmin]);
+    return () => clearTimeout(timeoutId);
+  }, [db, user, isAdmin, retryCount, setFunnels]);
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
       return;
     }
-    await createFunnel(newFunnelName);
-    setNewFunnelName('');
+    setIsLoading(true);
+    try {
+      await createFunnel(newFunnelName);
+      setNewFunnelName('');
+    } catch (err) {
+      setError('Failed to create funnel. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleDeleteFunnel = async (funnelId: string) => { 
-    await deleteFunnel(funnelId);
-    const updatedFunnels = funnels.filter(f => f.id !== funnelId);
-    setFunnels(updatedFunnels);
+
+  const handleDeleteFunnel = async (funnelId: string) => {
+    setIsLoading(true);
+    try {
+      await deleteFunnel(funnelId);
+    } catch (err) {
+      setError('Failed to delete funnel. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleCopyLink = (funnelId: string) => {
-    const url = `${window.location.origin}/#/play/${funnelId}`;
-    navigator.clipboard.writeText(url);
-    alert('Funnel link copied to clipboard!');
-  };
-  
+
   return (
     <div className="dashboard-container">
-      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
+      <h2>
+        <span role="img" aria-label="funnel">
+          🥞
+        </span>{' '}
+        Your Funnels
+      </h2>
       <div className="create-funnel-section">
         <input
           type="text"
@@ -257,9 +310,13 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, cr
           className="funnel-name-input"
         />
         <button className="add-button" onClick={handleCreateFunnel} disabled={isLoading}>
-          <span role="img" aria-label="add">➕</span> Create New Funnel
+          <span role="img" aria-label="add">
+            ➕
+          </span>{' '}
+          Create New Funnel
         </button>
       </div>
+
       {isLoading ? (
         <p className="loading-message">Loading funnels...</p>
       ) : error ? (
@@ -272,10 +329,18 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, cr
             <li key={funnel.id} className="funnel-item">
               <span>{funnel.name}</span>
               <div className="funnel-actions">
-                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>Edit</button>
-                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>Play</button>
-                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>Copy Link</button>
-                <button className="button-link delete-button" onClick={() => handleDeleteFunnel(funnel.id)}>Delete</button>
+                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>
+                  Edit
+                </button>
+                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>
+                  Play
+                </button>
+                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>
+                  Copy Link
+                </button>
+                <button className="button-link delete-button" onClick={() => handleDeleteFunnel(funnel.id)}>
+                  Delete
+                </button>
               </div>
             </li>
           ))}
