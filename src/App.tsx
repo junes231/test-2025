@@ -173,6 +173,8 @@ export default function App({ db }: AppProps) {
 
 interface FunnelDashboardProps {
   db: Firestore;
+  user: User; // <-- 添加这一行
+  isAdmin: boolean;
   funnels: Funnel[];
   setFunnels: React.Dispatch<React.SetStateAction<Funnel[]>>;
   createFunnel: (name: string) => Promise<void>;
