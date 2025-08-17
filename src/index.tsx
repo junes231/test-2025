@@ -11,11 +11,11 @@ import { getFirestore } from 'firebase/firestore';
 // Your Firebase configuration
 const firebaseConfig = {
   apiKey: 'AIzaSyA8rJiJnyB6QHgkesFekaRy7f0oftXaF0c',
-  authDomain: 'funnel-editor-netlify.firebaseapp.com',
-  projectId: 'funnel-editor-netlify',
-  storageBucket: 'funnel-editor-netlify.firebasestorage.app',
-  messagingSenderId: '498506838505',
-  appId: '1:498506838505:web:95f20fdfbb260c2b271b78',
+  authDomain: 'funnel-editor-netlify.firebaseapp.com',
+  projectId: 'funnel-editor-netlify',
+  storageBucket: 'funnel-editor-netlify.firebasestorage.app',
+  messagingSenderId: '498506838505',
+  appId: '1:498506838505:web:95f20fdfbb260c2b271b78',
   measurementId: 'G-RVRL76REP7',
 };
 
