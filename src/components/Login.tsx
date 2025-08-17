@@ -8,14 +8,27 @@ export default function Login() {
   const auth = getAuth();
 
   const handleSubmit = () => {
+    if (!email || !password) {
+      alert("Please enter both email and password.");
+      return;
+    }
+
     if (isLoginView) {
-      // 处理登录
+      // Handle Login
       signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          // Signed in 
+          console.log("User logged in:", userCredential.user);
+        })
         .catch(error => alert(`Login Failed: ${error.message}`));
     } else {
-      // 处理注册
+      // Handle Sign Up
       createUserWithEmailAndPassword(auth, email, password)
-        .catch(error => alert(`Registration failed: ${error.message}`));
+        .then((userCredential) => {
+          // Signed up 
+          console.log("User signed up:", userCredential.user);
+        })
+        .catch(error => alert(`Sign Up Failed: ${error.message}`));
     }
   };
 
@@ -44,7 +57,7 @@ export default function Login() {
           {isLoginView ? 'Log in' : 'register'}
         </button>
         <p onClick={() => setIsLoginView(!isLoginView)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
-          {isLoginView ? 'Don't have an account yet? Click here to register' : 'Already have an account? Log in'}
+          {isLoginView ? 'Don\'t have an account yet? Click here to register' : 'Already have an account? Log in'}
         </p>
       </div>
     </div>
