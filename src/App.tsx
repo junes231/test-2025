@@ -183,26 +183,21 @@ interface FunnelDashboardProps {
 
 // REPLACE your old FunnelDashboard component with this new one
 const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, funnels, setFunnels, createFunnel, deleteFunnel }) => {
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
+  // 我们只保留三个核心状态：加载中、错误信息、是否正在创建
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
-  const MAX_RETRIES = 5;
+  const [isCreating, setIsCreating] = useState(false);
 
-  const handleCopyLink = (funnelId: string) => {
-    const url = `${window.location.origin}/funnel-editor/#/play/${funnelId}`;
-    navigator.clipboard.writeText(url);
-    alert('Funnel link copied to clipboard!');
-  };
+  // 使用 useCallback 来包装数据获取逻辑
+  const fetchFunnels = useCallback(async () => {
+    // 安全检查：确保 user 和 db 都有效
+    if (!user || !db) {
+      return;
+    }
 
-  // 在 FunnelDashboard.tsx 组件中
-
-useEffect(() => {
-  // 如果 db 或 user 还没准备好，直接跳过
-  if (!db || !user) return;
-
-  const fetchFunnels = async () => {
     setIsLoading(true);
     setError(null);
 
@@ -210,67 +205,64 @@ useEffect(() => {
       const funnelsCollectionRef = collection(db, 'funnels');
       let q;
       if (isAdmin) {
+        console.log("Fetching data as Admin...");
         q = query(funnelsCollectionRef);
       } else {
-        q = query(funnelsCollectionRef, where('ownerId', '==', user.uid));
+        console.log("Fetching data as User...");
+        q = query(funnelsCollectionRef, where("ownerId", "==", user.uid));
       }
 
-      const data = await getDocs(q);
-
-      const loadedFunnels = data.docs.map((doc) => {
-        const docData = doc.data() as Partial<Funnel>;
-
-        // 安全检查 docData.data
-        const funnelData =
-          docData.data && typeof docData.data === 'object'
-            ? { ...defaultFunnelData, ...docData.data }
-            : { ...defaultFunnelData };
-
-        return {
-          ...(docData as Funnel),
-          id: doc.id,
-          data: funnelData,
-        };
-      });
+      const querySnapshot = await getDocs(q);
+      const loadedFunnels = querySnapshot.docs.map((doc) => ({
+        ...(doc.data() as Funnel),
+        id: doc.id,
+        data: { ...defaultFunnelData, ...doc.data().data },
+      }));
 
       setFunnels(loadedFunnels);
-      console.log('Fetched funnels:', loadedFunnels); // 调试用
     } catch (err: any) {
-      console.error('Error fetching funnels:', err);
-      setError(`Failed to load funnels: ${err.message}`);
+      console.error('CRITICAL: Failed to fetch funnels:', err);
+      setError(`Failed to load funnels. Please check the console for details. Error: ${err.message}`);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [db, user, isAdmin]); // 依赖项
 
-  fetchFunnels();
-}, [db, user, isAdmin, setFunnels]);
+  // useEffect 只负责在依赖项变化时调用 fetchFunnels
+  useEffect(() => {
+    fetchFunnels();
+  }, [fetchFunnels]);
+
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
       alert('Please enter a funnel name.');
       return;
     }
-    setIsLoading(true);
+    setIsCreating(true);
     try {
       await createFunnel(newFunnelName);
       setNewFunnelName('');
+      // 创建成功后，手动刷新一次列表
+      await fetchFunnels(); 
     } catch (err) {
       setError('Failed to create funnel. Please try again.');
     } finally {
-      setIsLoading(false);
+      setIsCreating(false);
     }
   };
 
   const handleDeleteFunnel = async (funnelId: string) => {
-    setIsLoading(true);
-    try {
-      await deleteFunnel(funnelId);
-    } catch (err) {
-      setError('Failed to delete funnel. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
+    await deleteFunnel(funnelId);
+    // 删除成功后，从列表中移除
+    setFunnels(prevFunnels => prevFunnels.filter(f => f.id !== funnelId));
   };
+  
+  const handleCopyLink = (funnelId: string) => {
+    const url = `${window.location.origin}/#/play/${funnelId}`;
+    navigator.clipboard.writeText(url);
+    alert('Funnel link copied to clipboard!');
+  };
+  
 
   return (
     <div className="dashboard-container">
