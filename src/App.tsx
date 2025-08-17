@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
-import { getAuth, signInAnonymously } from 'firebase/auth';
-import PasswordPrompt from './components/PasswordPrompt.tsx';
-import { useNavigate, useParams, Routes, Route, link } from 'react-router-dom';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
   collection,
   doc,
@@ -9,14 +8,16 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
- Firestore,
+  Firestore,
   query,
   where,
   getDoc
 } from 'firebase/firestore';
+
 import Login from './components/Login.tsx';
 import './App.css';
 
+// --- Interface Definitions ---
 interface Answer {
   id: string;
   text: string;
@@ -60,7 +61,6 @@ const defaultFunnelData: FunnelData = {
   backgroundColor: '#f8f9fa',
   textColor: '#333333',
 };
-
 // REPLACE your old App function with this new one
 export default function App({ db }: AppProps) {
   const navigate = useNavigate();
