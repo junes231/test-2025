@@ -671,11 +671,12 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
     );
   }
 
-  if (!funnelData || funnelData.questions.length === 0 || funnelData.questions.length < 6) {
+  // ... (在 QuizPlayer 组件内部)
+  if (!funnelData || funnelData.questions.length === 0) {
     return (
       <div className="quiz-player-container">
         <h2>Quiz Not Ready</h2>
-        <p>This funnel either has no questions or fewer than the required 6 questions. Please contact the funnel creator.</p>
+        <p>This funnel has no questions configured. Please contact the funnel creator.</p>
       </div>
     );
   }
