@@ -69,7 +69,7 @@ export default function App({ db }: AppProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-
+  const [funnels, setFunnels] = useState<Funnel[]>([]);
   // useEffect for Authentication and Role checking
   useEffect(() => {
     const auth = getAuth();
@@ -158,6 +158,8 @@ export default function App({ db }: AppProps) {
               db={db}
               user={user}
               isAdmin={isAdmin}
+              funnels={funnels}         // <-- 新增
+              setFunnels={setFunnels}
               createFunnel={createFunnel}
               deleteFunnel={deleteFunnel}
             />
