@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
-import { User } from "firebase/auth";
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
