@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
+import { User } from "firebase/auth";
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
@@ -192,8 +193,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // 注意：我们假设 funnels 和 setFunnels 是从 App 组件通过 props 传递下来的
-
   useEffect(() => {
     const fetchFunnels = async () => {
       if (!user || !db) {
@@ -220,8 +219,8 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
           data: { ...defaultFunnelData, ...doc.data().data },
         }));
         
-        // setFunnels(loadedFunnels); // 注意：setFunnels 也应该从 props 传入
-        console.log("Funnels loaded successfully:", loadedFunnels);
+        // 正确地调用从 App 传来的 setFunnels 方法来更新父组件的状态
+        setFunnels(loadedFunnels); 
 
       } catch (err: any) {
         console.error('CRITICAL: Failed to fetch funnels:', err);
@@ -232,7 +231,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     };
 
     fetchFunnels();
-  }, [db, user, isAdmin]); // 简化依赖项
+  }, [db, user, isAdmin, setFunnels]); // 依赖项中包含 setFunnels
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -243,7 +242,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     try {
       await createFunnel(newFunnelName);
       setNewFunnelName('');
-      // 创建成功后，App 组件的状态会更新，并重新传递 props
     } catch (err) {
       setError('Failed to create funnel. Please try again.');
     } finally {
@@ -252,7 +250,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   };
   
   const handleDeleteFunnel = async (funnelId: string) => {
-    // 删除逻辑现在也由父组件处理
     await deleteFunnel(funnelId);
   };
   
@@ -264,12 +261,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   
   return (
     <div className="dashboard-container">
-      <h2>
-        <span role="img" aria-label="funnel">
-          🥞
-        </span>{' '}
-        Your Funnels
-      </h2>
+      <h2><span role="img" aria-label="funnel">🥞</span> Your Funnels</h2>
       <div className="create-funnel-section">
         <input
           type="text"
@@ -278,14 +270,10 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
           onChange={(e) => setNewFunnelName(e.target.value)}
           className="funnel-name-input"
         />
-        <button className="add-button" onClick={handleCreateFunnel} disabled={isLoading}>
-          <span role="img" aria-label="add">
-            ➕
-          </span>{' '}
-          Create New Funnel
+        <button className="add-button" onClick={handleCreateFunnel} disabled={isCreating}>
+          {isCreating ? 'Creating...' : 'Create New Funnel'}
         </button>
       </div>
-
       {isLoading ? (
         <p className="loading-message">Loading funnels...</p>
       ) : error ? (
@@ -293,23 +281,16 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
       ) : funnels.length === 0 ? (
         <p className="no-funnels-message">No funnels created yet. Start by creating one!</p>
       ) : (
+        // 直接使用从 props 传来的 funnels 变量进行渲染
         <ul className="funnel-list">
           {funnels.map((funnel) => (
             <li key={funnel.id} className="funnel-item">
               <span>{funnel.name}</span>
               <div className="funnel-actions">
-                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>
-                  Edit
-                </button>
-                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>
-                  Play
-                </button>
-                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>
-                  Copy Link
-                </button>
-                <button className="button-link delete-button" onClick={() => handleDeleteFunnel(funnel.id)}>
-                  Delete
-                </button>
+                <button className="button-link" onClick={() => navigate(`/edit/${funnel.id}`)}>Edit</button>
+                <button className="button-link" onClick={() => navigate(`/play/${funnel.id}`)}>Play</button>
+                <button className="button-link" onClick={() => handleCopyLink(funnel.id)}>Copy Link</button>
+                <button className="button-link delete-button" onClick={() => handleDeleteFunnel(funnel.id)}>Delete</button>
               </div>
             </li>
           ))}
@@ -318,7 +299,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     </div>
   );
 };
-
 interface FunnelEditorProps {
   db: Firestore;
   updateFunnelData: (funnelId: string, newData: FunnelData) => Promise<void>;
