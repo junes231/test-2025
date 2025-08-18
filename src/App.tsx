@@ -252,6 +252,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   
   const handleDeleteFunnel = async (funnelId: string) => {
     await deleteFunnel(funnelId);
+    setFunnels(prevFunnels => prevFunnels.filter(funnel => funnel.id !== funnelId));
   };
   
   const handleCopyLink = (funnelId: string) => {
