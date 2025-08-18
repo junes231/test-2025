@@ -44,6 +44,7 @@ interface FunnelData {
 interface Funnel {
   id: string;
   name: string;
+  ownerId: string;
   data: FunnelData;
 }
 
@@ -169,32 +170,6 @@ export default function App({ db }: AppProps) {
       </Routes>
     </div>
   );
-}
-
-interface FunnelDashboardProps {
-  db: Firestore;
-  user: User; // <-- 添加这一行
-  isAdmin: boolean;
-  funnels: Funnel[];
-  setFunnels: React.Dispatch<React.SetStateAction<Funnel[]>>;
-  createFunnel: (name: string) => Promise<void>;
-  deleteFunnel: (funnelId: string) => Promise<void>;
-}
-
-// REPLACE your old FunnelDashboard component with this new one
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Firestore, collection, query, where, getDocs } from 'firebase/firestore';
-import { User } from 'firebase/auth';
-
-// 假设你有这个默认数据
-import { defaultFunnelData } from './defaultFunnelData';
-
-interface Funnel {
-  id: string;
-  name: string;
-  ownerId: string;
-  data: any;
 }
 
 interface FunnelDashboardProps {
