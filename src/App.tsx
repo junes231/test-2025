@@ -183,54 +183,56 @@ interface FunnelDashboardProps {
 
 // REPLACE your old FunnelDashboard component with this new one
 const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, funnels, setFunnels, createFunnel, deleteFunnel }) => {
+  需要
+  // const [funnels, setFunnels] = useState<Funnel[]>([]); 
+  
   const [newFunnelName, setNewFunnelName] = useState('');
   const navigate = useNavigate();
-  // 我们只保留三个核心状态：加载中、错误信息、是否正在创建
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
 
-  // 使用 useCallback 来包装数据获取逻辑
-  const fetchFunnels = useCallback(async () => {
-    // 安全检查：确保 user 和 db 都有效
-    if (!user || !db) {
-      return;
-    }
+  // 注意：我们假设 funnels 和 setFunnels 是从 App 组件通过 props 传递下来的
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const funnelsCollectionRef = collection(db, 'funnels');
-      let q;
-      if (isAdmin) {
-        console.log("Fetching data as Admin...");
-        q = query(funnelsCollectionRef);
-      } else {
-        console.log("Fetching data as User...");
-        q = query(funnelsCollectionRef, where("ownerId", "==", user.uid));
+  useEffect(() => {
+    const fetchFunnels = async () => {
+      if (!user || !db) {
+        setIsLoading(false);
+        return;
       }
 
-      const querySnapshot = await getDocs(q);
-      const loadedFunnels = querySnapshot.docs.map((doc) => ({
-        ...(doc.data() as Funnel),
-        id: doc.id,
-        data: { ...defaultFunnelData, ...doc.data().data },
-      }));
+      setIsLoading(true);
+      setError(null);
 
-      setFunnels(loadedFunnels);
-    } catch (err: any) {
-      console.error('CRITICAL: Failed to fetch funnels:', err);
-      setError(`Failed to load funnels. Please check the console for details. Error: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [db, user, isAdmin]); // 依赖项
+      try {
+        const funnelsCollectionRef = collection(db, 'funnels');
+        let q;
+        if (isAdmin) {
+          q = query(funnelsCollectionRef);
+        } else {
+          q = query(funnelsCollectionRef, where("ownerId", "==", user.uid));
+        }
 
-  // useEffect 只负责在依赖项变化时调用 fetchFunnels
-  useEffect(() => {
+        const querySnapshot = await getDocs(q);
+        const loadedFunnels = querySnapshot.docs.map((doc) => ({
+          ...(doc.data() as Funnel),
+          id: doc.id,
+          data: { ...defaultFunnelData, ...doc.data().data },
+        }));
+        
+        // setFunnels(loadedFunnels); // 注意：setFunnels 也应该从 props 传入
+        console.log("Funnels loaded successfully:", loadedFunnels);
+
+      } catch (err: any) {
+        console.error('CRITICAL: Failed to fetch funnels:', err);
+        setError(`Failed to load funnels. Error: ${err.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
     fetchFunnels();
-  }, [fetchFunnels]);
+  }, [db, user, isAdmin]); // 简化依赖项
 
   const handleCreateFunnel = async () => {
     if (!newFunnelName.trim()) {
@@ -241,19 +243,17 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     try {
       await createFunnel(newFunnelName);
       setNewFunnelName('');
-      // 创建成功后，手动刷新一次列表
-      await fetchFunnels(); 
+      // 创建成功后，App 组件的状态会更新，并重新传递 props
     } catch (err) {
       setError('Failed to create funnel. Please try again.');
     } finally {
       setIsCreating(false);
     }
   };
-
+  
   const handleDeleteFunnel = async (funnelId: string) => {
+    // 删除逻辑现在也由父组件处理
     await deleteFunnel(funnelId);
-    // 删除成功后，从列表中移除
-    setFunnels(prevFunnels => prevFunnels.filter(f => f.id !== funnelId));
   };
   
   const handleCopyLink = (funnelId: string) => {
@@ -262,7 +262,6 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
     alert('Funnel link copied to clipboard!');
   };
   
-
   return (
     <div className="dashboard-container">
       <h2>
