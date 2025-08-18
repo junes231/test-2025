@@ -185,7 +185,7 @@ interface FunnelDashboardProps {
 
 // REPLACE your old FunnelDashboard component with this new one
 const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, funnels, setFunnels, createFunnel, deleteFunnel }) => {
-  需要
+  
   // const [funnels, setFunnels] = useState<Funnel[]>([]); 
   
   const [newFunnelName, setNewFunnelName] = useState('');
