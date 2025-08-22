@@ -316,9 +316,9 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   
   const handleCopyLink = (funnelId: string) => {
   // 使用 window.location.href 获取完整的当前URL
-  const baseUrl = window.location.href.split('#')[0];
-  // 构建完整的funnel链接
-  const url = `${baseUrl}#/play/${funnelId}`;
+  const baseUrl = window.location.origin;
+  // 添加一个标识参数，表明这是直接访问的预览链接
+  const url = `${baseUrl}/#/play/${funnelId}?direct=true`;
   
   // 使用clipboard API
   navigator.clipboard.writeText(url).then(() => {
