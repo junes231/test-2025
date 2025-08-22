@@ -267,10 +267,20 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   };
   
   const handleCopyLink = (funnelId: string) => {
-    const url = `${window.location.origin}/#/play/${funnelId}`;
-    navigator.clipboard.writeText(url);
-    alert('Funnel link copied to clipboard!');
-  };
+  // 使用 window.location.href 获取完整的当前URL
+  const baseUrl = window.location.href.split('#')[0];
+  // 构建完整的funnel链接
+  const url = `${baseUrl}#/play/${funnelId}`;
+  
+  // 使用clipboard API
+  navigator.clipboard.writeText(url).then(() => {
+    // 使用自定义通知而不是alert
+    showNotification('Funnel link copied to clipboard!');
+  }).catch(err => {
+    console.error('Failed to copy:', err);
+    showNotification('Failed to copy link', 'error');
+  });
+};
   
   return (
     <div className="dashboard-container">
