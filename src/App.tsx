@@ -68,24 +68,35 @@ export default function App({ db }: AppProps) {
   // New state variables to manage authentication and user roles
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [funnels, setFunnels] = useState<Funnel[]>([]);
   // useEffect for Authentication and Role checking
   useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+  
+  // 只有当有用户时才设置loading
+  if (currentUser) {
+    setIsLoading(true);
+  }
+  
+  const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    if (currentUser) {
+      try {
         setUser(currentUser);
         const idTokenResult = await currentUser.getIdTokenResult(true);
         setIsAdmin(idTokenResult.claims.role === 'admin');
-      } else {
-        setUser(null);
-        setIsAdmin(false);
+      } catch (error) {
+        console.error('Error checking admin status:', error);
       }
-      setIsLoading(false); 
-    });
-    return () => unsubscribe(); 
-  }, []);
+    } else {
+      setUser(null);
+      setIsAdmin(false);
+    }
+    setIsLoading(false);
+  });
+  return () => unsubscribe();
+}, []);
 
   // --- CRUD Functions (These should be inside the App component) ---
   const createFunnel = async (name: string) => {
@@ -132,9 +143,9 @@ export default function App({ db }: AppProps) {
   };
 
   // --- Render Logic ---
-  if (isLoading) {
-    return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
-  }
+  if (user && isLoading) {  // 只有在有用户且正在加载时显示
+  return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
+}
 
   if (!user) {
     return <Login />; 
