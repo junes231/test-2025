@@ -316,13 +316,13 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   
   const handleCopyLink = (funnelId: string) => {
   // 使用 window.location.href 获取完整的当前URL
-  console.log('Current URL:', window.location.href);
+  
   
   const baseUrl = window.location.origin;
   // 使用与当前 URL 结构相匹配的格式
-  const url = `${baseUrl}/#/play/${funnelId}?direct=true`;
+  const url = `${baseUrl}/#/play/${funnelId};
   
-  console.log('Generated URL:', url);
+  
   
   
   // 使用clipboard API
