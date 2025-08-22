@@ -70,6 +70,29 @@ export default function App({ db }: AppProps) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [funnels, setFunnels] = useState<Funnel[]>([]);
+  // 在现有的 state 声明附近添加
+const [notification, setNotification] = useState<{
+  message: string;
+  type: 'success' | 'error';
+  visible: boolean;
+}>({
+  message: '',
+  type: 'success',
+  visible: false
+});
+
+// 添加显示通知的函数
+const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+  setNotification({
+    message,
+    type,
+    visible: true
+  });
+  
+  setTimeout(() => {
+    setNotification(prev => ({ ...prev, visible: false }));
+  }, 3000);
+};
   // useEffect for Authentication and Role checking
   useEffect(() => {
   const auth = getAuth();
