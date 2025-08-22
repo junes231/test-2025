@@ -1137,11 +1137,11 @@ const ColorCustomizerComponent: React.FC<ColorCustomizerComponentProps> = ({
         <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} />
       </div>
       <div className="form-actions">
-        <button className="save-button" onClick={() => alert('Color settings applied! (Auto-saved)')}>
-          <span role="img" aria-label="save">
-            💾
-          </span>{' '}
-          Applied
+        <button className="save-button" onClick={() => showNotification('Color settings applied! (Auto-saved)')}>
+        <span role="img" aria-label="save">
+          💾
+        </span>{' '}
+        Applied
         </button>
         <button className="cancel-button" onClick={onBack}>
           <span role="img" aria-label="back">
