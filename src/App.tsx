@@ -317,8 +317,12 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   const handleCopyLink = (funnelId: string) => {
   // 使用 window.location.href 获取完整的当前URL
   const baseUrl = window.location.origin;
-  // 移除 # 符号，直接使用 /play/ 路径
-  const url = `${baseUrl}/play/${funnelId}`;
+  // 添加仓库名称到路径中
+  const url = `${baseUrl}/funnel-editor-2025/#/play/${funnelId}`;
+  
+  // 添加调试日志
+  console.log('Generated URL:', url);
+  
   
   // 使用clipboard API
   navigator.clipboard.writeText(url).then(() => {
