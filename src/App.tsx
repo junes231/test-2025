@@ -1087,8 +1087,7 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
         </select>
       </div>
       <div className="form-actions">
-          // 修改为
-       <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
+      <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
       <span role="img" aria-label="save">
         💾
       </span>{' '}
