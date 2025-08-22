@@ -320,7 +320,7 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   
   const baseUrl = window.location.origin;
   // 使用与当前 URL 结构相匹配的格式
-  const url = `${baseUrl}/funnel-editor-2025/#/play/${funnelId}`;
+  const url = `${baseUrl}/#/play/${funnelId}?direct=true`;
   
   console.log('Generated URL:', url);
   
