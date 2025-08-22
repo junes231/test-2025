@@ -203,6 +203,13 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
         <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
         <Route path="*" element={<h2>404 Not Found</h2>} />
       </Routes>
+        {notification.visible && (
+      <div className={`custom-notification ${notification.type}`}>
+        <div className="notification-content">
+          {notification.message}
+        </div>
+      </div>
+    )}
     </div>
   );
 }
