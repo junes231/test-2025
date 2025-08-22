@@ -716,17 +716,37 @@ p {
 }
 
 /* NEW: Styles for loading/error messages */
-.loading-message, .error-message, .no-funnels-message, .no-questions-message {
+/* 修改现有的loading样式 */
+.loading-message {
     text-align: center;
     padding: 20px;
     border-radius: 8px;
     margin: 20px 0;
     font-style: italic;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background-color: #f8f9fa;
+    color: #007bff;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    animation: pulse 1.5s infinite;
 }
 
-.loading-message {
-    background-color: #e0f7fa;
-    color: #007bff;
+/* 添加加载图标样式 */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 .error-message {
@@ -762,4 +782,60 @@ p {
     transform: scale(1);
     opacity: 0.85;
   }
+}
+/* 认证相关样式 */
+.auth-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+    max-width: 400px;
+    width: 95%;
+    margin: 2rem auto;
+}
+
+.auth-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth-input {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.auth-button {
+    background-color: #007bff;
+    color: white;
+    padding: 0.75rem;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auth-button:hover {
+    background-color: #0056b3;
+}
+
+.auth-switch {
+    text-align: center;
+    margin-top: 1rem;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.auth-switch:hover {
+    text-decoration: underline;
 }
