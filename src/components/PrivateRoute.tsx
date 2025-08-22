@@ -1,16 +1,21 @@
-// src/components/PrivateRoute.tsx
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth'; // 假设你有一个 auth hook
+import { getAuth } from 'firebase/auth';
 
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+interface PrivateRouteProps {
+  children: React.ReactNode;
+}
+
+const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
+  // 使用 Firebase Auth 来检查用户是否登录
+  const auth = getAuth();
+  const user = auth.currentUser;
   
   if (!user) {
-    // 将当前URL保存到 localStorage，以便登录后重定向
-    localStorage.setItem('redirectUrl', window.location.pathname);
+    // 如果用户未登录，重定向到登录页面
     return <Navigate to="/login" replace />;
   }
 
+  // 如果用户已登录，显示受保护的内容
   return <>{children}</>;
 };
 
