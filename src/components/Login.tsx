@@ -58,6 +58,27 @@ export default function Login() {
         </button>
         <p onClick={() => setIsLoginView(!isLoginView)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
           {isLoginView ? 'Don\'t have an account yet? Click here to register' : 'Already have an account? Log in'}
+          {/* ===== START: ADD THIS CODE BLOCK ===== */}
+<div className="mt-6 text-center text-sm">
+  <a 
+    href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md" 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="text-gray-500 hover:underline"
+  >
+    Privacy Policy
+  </a>
+  <span className="mx-2 text-gray-400">|</span>
+  <a 
+    href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md" 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="text-gray-500 hover:underline"
+  >
+    Terms of Service
+  </a>
+</div>
+{/* ===== END: ADD THIS CODE BLOCK ===== */}
         </p>
       </div>
     </div>
