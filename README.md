@@ -22,7 +22,7 @@ This repository contains the source code for personal or licensed use only. Redi
 ## Deployment
 
 This project is configured for GitHub Pages deployment. Your funnel editor will be available at:
-`https://junes231.github.io/funnel-editor`
+
 
 ## Usage
 
