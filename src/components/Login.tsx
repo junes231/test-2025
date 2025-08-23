@@ -62,7 +62,7 @@ export default function Login() {
 <div className="mt-6 text-center text-xs text-gray-400">
   <p>By logging in, you agree to our:</p>
   <a
-    href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md"
+    href="https://docs.google.com/document/d/121JAPwX0z9avzsZ_-cd6jJRn-0LT8KwVZTRTRZ9Ye8s/edit?usp=drivesdk"
     target="_blank"
     rel="noopener noreferrer"
     className="block mt-2 text-gray-500 hover:text-gray-700 hover:underline transition-colors duration-200"
@@ -70,7 +70,7 @@ export default function Login() {
     Privacy Policy
   </a>
   <a
-    href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md"
+    href="https://docs.google.com/document/d/13guu8xFvE6wwrzjRQKY6nAcU5VgVqqbpr9Ysd87okI8/edit?usp=drivesdk"
     target="_blank"
     rel="noopener noreferrer"
     className="block mt-1 text-gray-500 hover:text-gray-700 hover:underline transition-colors duration-200"
