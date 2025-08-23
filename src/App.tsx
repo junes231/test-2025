@@ -525,8 +525,9 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }
 
     setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
-    alert(`Successfully imported ${validImportedQuestions.length} questions!`);
-  };
+    setNotification({ message: 'Successfully imported 6 questions!', type: 'success' });
+
+    setNotification({ message: 'Failed to import questions.', type: 'error' });
 
   const renderEditorContent = () => {
     switch (currentSubView) {
