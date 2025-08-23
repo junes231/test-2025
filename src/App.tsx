@@ -142,19 +142,30 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   };
 
   const deleteFunnel = async (funnelId: string) => {
-    if (!db || !user) return;
-    if (window.confirm('Are you sure you want to delete this funnel?')) {
-      try {
-        const funnelDoc = doc(db, 'funnels', funnelId);
-        await deleteDoc(funnelDoc);
-        alert('Funnel deleted.');
-        navigate('/');
-      } catch (error: any) {
-        console.error('Error deleting funnel:', error);
-        alert(`Failed to delete funnel: ${error.message}`);
-      }
+  if (!db || !user) return;
+
+  // ⬇️ 我们暂时保留浏览器默认的确认框
+  if (window.confirm('Are you sure you want to delete this funnel?')) {
+    try {
+      const funnelDoc = doc(db, 'funnels', funnelId);
+      await deleteDoc(funnelDoc);
+
+      // ▼▼▼ 只修改这里 ▼▼▼
+      // Before: alert('Funnel deleted.');
+      // After:
+      setNotification({ message: 'Funnel deleted.', type: 'success' });
+      
+      navigate('/');
+    } catch (error: any) {
+      console.error('Error deleting funnel:', error);
+
+      // ▼▼▼ 和这里 ▼▼▼
+      // Before: alert(`Failed to delete funnel: ${error.message}`);
+      // After:
+      setNotification({ message: `Failed to delete funnel: ${error.message}`, type: 'error' });
     }
-  };
+  }
+};
 
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
     if (!db || !user) return;
