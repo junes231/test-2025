@@ -61,7 +61,7 @@ export default function Login() {
           {/* ===== START: ADD THIS CODE BLOCK ===== */}
 <div className="mt-6 text-center text-sm text-gray-500">
   <p className="mb-2">By logging in, you agree to our</p>
-  <div className="flex flex-col items-center space-y-2 sm:space-y-2">
+  <div className="flex flex-col items-center [&>*]:block [&>*]:w-full space-y-2">
     <a 
       href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md" 
       target="_blank" 
@@ -79,7 +79,7 @@ export default function Login() {
       Terms of Service
     </a>
   </div>
-</div>    
+</div>
       </p>
       </div>
     </div>
