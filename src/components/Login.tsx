@@ -59,26 +59,27 @@ export default function Login() {
         <p onClick={() => setIsLoginView(!isLoginView)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
           {isLoginView ? 'Don\'t have an account yet? Click here to register' : 'Already have an account? Log in'}
           {/* ===== START: ADD THIS CODE BLOCK ===== */}
-<div className="mt-6 text-center text-sm text-gray-500">
-  <p className="mb-2">By logging in, you agree to our</p>
-  <div className="flex flex-col items-center [&>*]:block [&>*]:w-full space-y-2">
-    <a 
-      href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="text-gray-600 hover:text-gray-800 hover:underline transition-colors duration-200"
+<div className="mt-6 text-center text-xs text-gray-400">
+  <p>
+    By logging in, you agree to our{" "}
+    <a
+      href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-500 hover:text-gray-700 hover:underline transition-colors duration-200"
     >
       Privacy Policy
-    </a>
-    <a 
-      href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md" 
-      target="_blank" 
-      rel="noopener noreferrer" 
-      className="text-gray-600 hover:text-gray-800 hover:underline transition-colors duration-200"
+    </a>{" "}
+    and{" "}
+    <a
+      href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-gray-500 hover:text-gray-700 hover:underline transition-colors duration-200"
     >
       Terms of Service
-    </a>
-  </div>
+    </a>.
+  </p>
 </div>
       </p>
       </div>
