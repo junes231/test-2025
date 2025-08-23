@@ -1,6 +1,7 @@
 # Marketing Funnel Editor
 
-A web-based interactive marketing funnel editor designed for affiliate marketing. Built with React, TypeScript, and React Flow.
+A web-based interactive marketing funnel editor designed for affiliate marketing. Built with React, TypeScript, and React Flow.  
+This repository contains the source code for personal or licensed use only. Redistribution or resale is prohibited.
 
 ## Features
 
@@ -42,3 +43,15 @@ This project is configured for GitHub Pages deployment. Your funnel editor will 
 ## License
 
 MIT License
+
+## Legal
+
+By using or purchasing this software, you agree to our
+[Terms of Service](https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md) and
+[Privacy Policy](https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md).
+
+## Contact
+
+For questions or support, please contact:
+- muskjuons@gmail.com
+- affiliate@hersupps.com
