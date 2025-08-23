@@ -132,11 +132,12 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
         data: defaultFunnelData,
         ownerId: user.uid, 
       });
-      alert(`Funnel "${name}" created!`);
-      navigate(`/edit/${newFunnelRef.id}`);
-    } catch (error: any) {
-      console.error('Error creating funnel:', error);
-      alert(`Failed to create funnel: ${error.message}`);
+      setNotification({ message: `Funnel "${name}" created!`, type: 'success' });
+    navigate(`/edit/${newFunnelRef.id}`);
+  } catch (error: any) {
+    console.error('Error creating funnel:', error);
+    // ✅ Use the error notification
+    setNotification({ message: `Failed to create funnel: ${error.message}`, type: 'error' });
     }
   };
 
