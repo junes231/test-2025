@@ -837,91 +837,86 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) {
-  setNotification({
-    show: true,
-    message: 'No file selected.',
-    type: 'error'
-  });
-  return;
-}
-if (file.type !== 'application/json') {
-  setNotification({
-    show: true,
-    message: 'Please select a JSON file.',
-    type: 'error'
-  });
-  return;
-}
-
-   const reader = new FileReader();
-reader.onload = (e) => {
-  try {
-    const content = e.target?.result as string;
-    const parsedData: Question[] = JSON.parse(content);
-
-    if (!Array.isArray(parsedData)) {
-      setNotification({
-        show: true,
-        message: 'Invalid JSON format. Expected an array of questions.',
-        type: 'error'
-      });
-      return;
-    }
-
-    // 这里继续你的其它校验和处理...
-    // 比如 isValid 校验等
-
-  } catch (err) {
+  const file = event.target.files?.[0];
+  if (!file) {
     setNotification({
       show: true,
-      message: 'Error reading or parsing JSON file. Please check file format.',
+      message: 'No file selected.',
       type: 'error'
     });
+    return;
   }
-};
+  if (file.type !== 'application/json' && !file.name.endsWith('.json')) {
+    setNotification({
+      show: true,
+      message: 'Please select a JSON file.',
+      type: 'error'
+    });
+    return;
+  }
 
-        const isValid = parsedData.every(
-          (q) =>
-            q.title &&
-            typeof q.title === 'string' &&
-            q.title.trim() !== '' &&
-            Array.isArray(q.answers) &&
-            q.answers.length > 0 &&
-            q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
-        );
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const content = e.target?.result as string;
+      const parsedData: Question[] = JSON.parse(content);
 
-        if (!isValid) {
-  setNotification({
-    show: true,
-    message: 'Invalid JSON format. Please ensure it is an array of questions, each with a "title" and an "answers" array, where each answer has a "text" field.',
-    type: 'error'
-  });
-  return;
-}
+      if (!Array.isArray(parsedData)) {
+        setNotification({
+          show: true,
+          message: 'Invalid JSON format. Expected an array of questions.',
+          type: 'error'
+        });
+        return;
+      }
 
-        const questionsWithNewIds = parsedData.map((q) => ({
-          ...q,
-          id: Date.now().toString() + Math.random().toString(),
-          type: q.type || 'single-choice',
-          answers: q.answers.map((a) => ({
-            ...a,
-            id: a.id || Date.now().toString() + Math.random().toString(),
-          })),
-        }));
+      const isValid = parsedData.every(
+        (q) =>
+          q.title &&
+          typeof q.title === 'string' &&
+          q.title.trim() !== '' &&
+          Array.isArray(q.answers) &&
+          q.answers.length > 0 &&
+          q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
+      );
 
-        try {
-  onImportQuestions(questionsWithNewIds);
-} catch (err) {
-  setNotification({
-    show: true,
-    message: 'Error reading or parsing JSON file. Please check file format.',
-    type: 'error'
-  });
-}
-    reader.readAsText(file);
+      if (!isValid) {
+        setNotification({
+          show: true,
+          message: 'Invalid JSON format. Please ensure it is an array of questions, each with a "title" and an "answers" array, where each answer has a "text" field.',
+          type: 'error'
+        });
+        return;
+      }
+
+      const questionsWithNewIds = parsedData.map((q) => ({
+        ...q,
+        id: Date.now().toString() + Math.random().toString(),
+        type: q.type || 'single-choice',
+        answers: q.answers.map((a) => ({
+          ...a,
+          id: a.id || Date.now().toString() + Math.random().toString(),
+        })),
+      }));
+
+      onImportQuestions(questionsWithNewIds);
+      setNotification({
+        show: true,
+        message: 'Questions imported successfully!',
+        type: 'success'
+      });
+
+    } catch (err) {
+      setNotification({
+        show: true,
+        message: 'Error reading or parsing JSON file. Please check file format.',
+        type: 'error'
+      });
+    }
   };
+
+  reader.readAsText(file);
+};
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
