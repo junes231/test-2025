@@ -538,10 +538,10 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
   );
 
   if (validImportedQuestions.length === 0) {
-  showNotification(
-    'No valid questions found in the imported file. Please check the file format (title and answer text are required).',
-    'error'
-  );
+  setNotification({
+      message: 'No valid questions found in the imported file. Please check the file format (title and answer text are required)',
+      type: 'error',
+    });
   return;  // 别忘了 return
 }
 
