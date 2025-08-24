@@ -839,13 +839,21 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
-      alert('No file selected.');
-      return;
-    }
-    if (file.type !== 'application/json') {
-      alert('Please select a JSON file.');
-      return;
-    }
+  setNotification({
+    show: true,
+    message: 'No file selected.',
+    type: 'error'
+  });
+  return;
+}
+if (file.type !== 'application/json') {
+  setNotification({
+    show: true,
+    message: 'Please select a JSON file.',
+    type: 'error'
+  });
+  return;
+}
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -854,9 +862,13 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
         const parsedData: Question[] = JSON.parse(content);
 
         if (!Array.isArray(parsedData)) {
-          alert('Invalid JSON format. Expected an array of questions.');
-          return;
-        }
+  setNotification({
+    show: true,
+    message: 'Invalid JSON format. Expected an array of questions.',
+    type: 'error'
+  });
+  return;
+}
 
         const isValid = parsedData.every(
           (q) =>
@@ -869,11 +881,13 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
         );
 
         if (!isValid) {
-          alert(
-            'Invalid JSON format. Please ensure it is an array of questions, each with a "title" and an "answers" array, where each answer has a "text" field.'
-          );
-          return;
-        }
+  setNotification({
+    show: true,
+    message: 'Invalid JSON format. Please ensure it is an array of questions, each with a "title" and an "answers" array, where each answer has a "text" field.',
+    type: 'error'
+  });
+  return;
+}
 
         const questionsWithNewIds = parsedData.map((q) => ({
           ...q,
@@ -886,11 +900,13 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
         }));
 
         onImportQuestions(questionsWithNewIds);
-      } catch (err) {
-        console.error('Error parsing JSON file:', err);
-        alert('Error reading or parsing JSON file. Please check file format.');
-      }
-    };
+      catch (err) {
+  setNotification({
+    show: true,
+    message: 'Error reading or parsing JSON file. Please check file format.',
+    type: 'error'
+  });
+}
     reader.readAsText(file);
   };
 
