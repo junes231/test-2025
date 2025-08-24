@@ -144,12 +144,15 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   const deleteFunnel = async (funnelId: string) => {
   if (!db || !user) return;
   try {
-    // 你的删除操作
-    // await deleteDoc(...)
+    const funnelDoc = doc(db, 'funnels', funnelId);
+    await deleteDoc(funnelDoc);
+
     setNotification({ message: 'Funnel deleted.', type: 'success' });
-    navigate('/');
-  } catch (error: any) {
-    console.error('Error deleting funnel:', error);
+    // 更新本地state（假设你有setFunnels这个方法）
+    setFunnels(funnels => funnels.filter(f => f.id !== funnelId));
+    // 3秒后可选：跳转或其它操作
+    // setTimeout(() => navigate('/'), 3000);
+  } catch (error) {
     setNotification({ message: `Failed to delete funnel: ${error.message}`, type: 'error' });
   }
 };
