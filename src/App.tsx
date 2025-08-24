@@ -16,6 +16,7 @@ import {
 } from 'firebase/firestore';
 
 import Login from './components/Login.tsx';
+import { Notification } from './components/Notification.tsx';
 import './App.css';
 
 // --- Interface Definitions ---
@@ -71,29 +72,59 @@ export default function App({ db }: AppProps) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [funnels, setFunnels] = useState<Funnel[]>([]);
-  // 在现有的 state 声明附近添加
-const [notification, setNotification] = useState<{
-  message: string;
-  type: 'success' | 'error';
-  visible: boolean;
-}>({
-  message: '',
-  type: 'success',
-  visible: false
-});
-
-// 添加显示通知的函数
-const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
-  setNotification({
-    message,
-    type,
-    visible: true
+  // Notification state management with timeout tracking
+  const [notification, setNotification] = useState<{
+    message: string;
+    type: 'success' | 'error';
+    visible: boolean;
+  }>({
+    message: '',
+    type: 'success',
+    visible: false
   });
   
-  setTimeout(() => {
+  // Track notification timeout for cleanup
+  const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Function to clear notification timeout
+  const clearNotificationTimeout = () => {
+    if (notificationTimeoutRef.current) {
+      clearTimeout(notificationTimeoutRef.current);
+      notificationTimeoutRef.current = null;
+    }
+  };
+
+  // Function to manually close notification
+  const closeNotification = () => {
+    clearNotificationTimeout();
     setNotification(prev => ({ ...prev, visible: false }));
-  }, 3000);
-};
+  };
+
+  // Enhanced notification function with timeout cleanup
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    // Clear any existing notification and timeout to prevent stacking
+    clearNotificationTimeout();
+    
+    setNotification({
+      message,
+      type,
+      visible: true
+    });
+    
+    // Set new timeout and store its ID for cleanup
+    notificationTimeoutRef.current = setTimeout(() => {
+      setNotification(prev => ({ ...prev, visible: false }));
+      notificationTimeoutRef.current = null;
+    }, 3000);
+  };
+  // useEffect for cleanup notification timeout on unmount
+  useEffect(() => {
+    return () => {
+      // Cleanup notification timeout when component unmounts
+      clearNotificationTimeout();
+    };
+  }, []);
+
   // useEffect for Authentication and Role checking
   useEffect(() => {
   const auth = getAuth();
@@ -132,12 +163,11 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
         data: defaultFunnelData,
         ownerId: user.uid, 
       });
-      setNotification({ message: `Funnel "${name}" created!`, type: 'success' });
+      showNotification(`Funnel "${name}" created!`, 'success');
     navigate(`/edit/${newFunnelRef.id}`);
   } catch (error: any) {
     console.error('Error creating funnel:', error);
-    // ✅ Use the error notification
-    setNotification({ message: `Failed to create funnel: ${error.message}`, type: 'error' });
+    showNotification(`Failed to create funnel: ${error.message}`, 'error');
     }
   };
 
@@ -233,12 +263,12 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
       />
       <Route path="*" element={<h2>404 Not Found</h2>} />
     </Routes>
-        {notification.visible && (
-      <div className={`custom-notification ${notification.type}`}>
-        <div className="notification-content">
-          {notification.message}
-        </div>
-      </div>
+    {notification.visible && (
+      <Notification
+        message={notification.message}
+        type={notification.type}
+        onClose={closeNotification}
+      />
     )}
     </div>
   );
@@ -513,7 +543,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
       setSelectedQuestionIndex(null);
       setCurrentSubView('quizEditorList');
 
-      setNotification({ message: 'Question deleted.', type: 'success' });
+      showNotification('Question deleted.', 'success');
     }
   }
 };
@@ -1073,6 +1103,13 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
   setConversionGoal,
   onBack,
 }) => {
+  // Function to clear domain settings
+  const clearDomainSettings = () => {
+    setFinalRedirectLink('');
+    setTracking('');
+    setConversionGoal('Product Purchase');
+  };
+
   return (
     <div className="link-settings-container">
       <h2>
@@ -1084,21 +1121,43 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
       <p>This is the custom link where users will be redirected after completing the quiz.</p>
       <div className="form-group">
         <label>Custom Final Redirect Link:</label>
-        <input
-          type="text"
-          value={finalRedirectLink}
-          onChange={(e) => setFinalRedirectLink(e.target.value)}
-          placeholder="https://your-custom-product-page.com"
-        />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={finalRedirectLink}
+            onChange={(e) => setFinalRedirectLink(e.target.value)}
+            placeholder="https://your-custom-product-page.com"
+            style={{ flex: 1 }}
+          />
+          <button
+            type="button"
+            onClick={() => setFinalRedirectLink('')}
+            className="clear-button"
+            title="Clear link"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div className="form-group">
         <label>Optional: Tracking Parameters:</label>
-        <input
-          type="text"
-          value={tracking}
-          onChange={(e) => setTracking(e.target.value)}
-          placeholder="utm_source=funnel&utm_campaign=..."
-        />
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <input
+            type="text"
+            value={tracking}
+            onChange={(e) => setTracking(e.target.value)}
+            placeholder="utm_source=funnel&utm_campaign=..."
+            style={{ flex: 1 }}
+          />
+          <button
+            type="button"
+            onClick={() => setTracking('')}
+            className="clear-button"
+            title="Clear tracking"
+          >
+            ×
+          </button>
+        </div>
       </div>
       <div className="form-group">
         <label>Conversion Goal:</label>
@@ -1109,12 +1168,18 @@ const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
         </select>
       </div>
       <div className="form-actions">
-      <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
-      <span role="img" aria-label="save">
-        💾
-      </span>{' '}
-       Applied
-       </button>
+        <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
+          <span role="img" aria-label="save">
+            💾
+          </span>{' '}
+          Applied
+        </button>
+        <button className="clear-button" onClick={clearDomainSettings}>
+          <span role="img" aria-label="clear">
+            🗑️
+          </span>{' '}
+          Clear All
+        </button>
         <button className="cancel-button" onClick={onBack}>
           <span role="img" aria-label="back">
             ←
