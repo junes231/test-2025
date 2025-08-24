@@ -855,20 +855,32 @@ if (file.type !== 'application/json') {
   return;
 }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const parsedData: Question[] = JSON.parse(content);
+   const reader = new FileReader();
+reader.onload = (e) => {
+  try {
+    const content = e.target?.result as string;
+    const parsedData: Question[] = JSON.parse(content);
 
-        if (!Array.isArray(parsedData)) {
-  setNotification({
-    show: true,
-    message: 'Invalid JSON format. Expected an array of questions.',
-    type: 'error'
-  });
-  return;
-}
+    if (!Array.isArray(parsedData)) {
+      setNotification({
+        show: true,
+        message: 'Invalid JSON format. Expected an array of questions.',
+        type: 'error'
+      });
+      return;
+    }
+
+    // 这里继续你的其它校验和处理...
+    // 比如 isValid 校验等
+
+  } catch (err) {
+    setNotification({
+      show: true,
+      message: 'Error reading or parsing JSON file. Please check file format.',
+      type: 'error'
+    });
+  }
+};
 
         const isValid = parsedData.every(
           (q) =>
