@@ -495,15 +495,17 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const handleDeleteQuestion = () => {
   if (selectedQuestionIndex !== null) {
-    // 用通知代替 confirm
-    if (window.confirm('Are you sure you want to delete this question?')) {
-      const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
-      setQuestions(updatedQuestions);
-      setSelectedQuestionIndex(null);
-      setCurrentSubView('quizEditorList');
+    setIsDeleting(true); // 开始动画
+    const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
+    setQuestions(updatedQuestions);
+    setSelectedQuestionIndex(null);
+    setCurrentSubView('quizEditorList');
+    setNotification({ message: 'Question deleted.', type: 'success' });
 
-      setNotification({ message: 'Question deleted.', type: 'success' });
-    }
+    setTimeout(() => {
+      setIsDeleting(false); // 3秒后恢复
+      // 这里可做跳转或其它操作
+    }, 3000);
   }
 };
 
