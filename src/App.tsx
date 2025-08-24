@@ -899,8 +899,9 @@ if (file.type !== 'application/json') {
           })),
         }));
 
-        onImportQuestions(questionsWithNewIds);
-      catch (err) {
+        try {
+  onImportQuestions(questionsWithNewIds);
+} catch (err) {
   setNotification({
     show: true,
     message: 'Error reading or parsing JSON file. Please check file format.',
