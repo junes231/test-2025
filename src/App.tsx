@@ -538,14 +538,12 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
   );
 
   if (validImportedQuestions.length === 0) {
-    showNotification('No valid questions found in the imported file. Please check the file format (title and answer text are required).');
-  catch(err => {
-    console.error('Failed to imported:', err);
-    showNotification('Failed to imported questions', 'error');
-  });
-    
-    return;
-  }
+  showNotification(
+    'No valid questions found in the imported file. Please check the file format (title and answer text are required).',
+    'error'
+  );
+  return;  // 别忘了 return
+}
 
   setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
   setNotification({ message: `Successfully imported ${validImportedQuestions.length} questions!`, type: 'success' });
