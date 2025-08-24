@@ -505,41 +505,49 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const handleDeleteQuestion = () => {
-    if (selectedQuestionIndex !== null && window.confirm('Are you sure you want to delete this question?')) {
+  if (selectedQuestionIndex !== null) {
+    // 用通知代替 confirm
+    if (window.confirm('Are you sure you want to delete this question?')) {
       const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
       setQuestions(updatedQuestions);
       setSelectedQuestionIndex(null);
       setCurrentSubView('quizEditorList');
+
+      setNotification({ message: 'Question deleted.', type: 'success' });
     }
-  };
+  }
+};
 
-  const handleImportQuestions = (importedQuestions: Question[]) => {
-    if (questions.length + importedQuestions.length > 6) {
-      alert(
-        `Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`
-      );
-      return;
-    }
-    const validImportedQuestions = importedQuestions.filter(
-      (q) =>
-        q.title &&
-        typeof q.title === 'string' &&
-        q.title.trim() !== '' &&
-        Array.isArray(q.answers) &&
-        q.answers.length > 0 &&
-        q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
-    );
+const handleImportQuestions = (importedQuestions: Question[]) => {
+  if (questions.length + importedQuestions.length > 6) {
+    setNotification({
+      message: `Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`,
+      type: 'error',
+    });
+    return;
+  }
 
-    if (validImportedQuestions.length === 0) {
-      alert('No valid questions found in the imported file. Please check the file format (title and answer text are required).');
-      return;
-    }
+  const validImportedQuestions = importedQuestions.filter(
+    (q) =>
+      q.title &&
+      typeof q.title === 'string' &&
+      q.title.trim() !== '' &&
+      Array.isArray(q.answers) &&
+      q.answers.length > 0 &&
+      q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
+  );
 
-    setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
-    setNotification({ message: 'Successfully imported 6 questions!', type: 'success' });
+  if (validImportedQuestions.length === 0) {
+    setNotification({
+      message: 'No valid questions found in the imported file. Please check the file format (title and answer text are required).',
+      type: 'error',
+    });
+    return;
+  }
 
-    setNotification({ message: 'Failed to import questions.', type: 'error' });
-
+  setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
+  setNotification({ message: `Successfully imported ${validImportedQuestions.length} questions!`, type: 'success' });
+};
   const renderEditorContent = () => {
     switch (currentSubView) {
       case 'quizEditorList':
