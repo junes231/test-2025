@@ -519,34 +519,48 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 };
 
 const handleImportQuestions = (importedQuestions: Question[]) => {
-  if (questions.length + importedQuestions.length > 6) {
+  try {
+    if (questions.length + importedQuestions.length > 6) {
+      setNotification({
+        show: true,
+        message: `Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`,
+        type: 'error',
+      });
+      return;
+    }
+
+    const validImportedQuestions = importedQuestions.filter(
+      (q) =>
+        q.title &&
+        typeof q.title === 'string' &&
+        q.title.trim() !== '' &&
+        Array.isArray(q.answers) &&
+        q.answers.length > 0 &&
+        q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
+    );
+
+    if (validImportedQuestions.length === 0) {
+      setNotification({
+        show: true,
+        message: 'No valid questions found in the imported file. Please check the file format (title and answer text are required)',
+        type: 'error',
+      });
+      return;
+    }
+
+    setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
     setNotification({
-      message: `Cannot import. This funnel already has ${questions.length} questions. Importing ${importedQuestions.length} more would exceed the 6-question limit.`,
+      show: true,
+      message: `Successfully imported ${validImportedQuestions.length} questions!`,
+      type: 'success',
+    });
+  } catch (err) {
+    setNotification({
+      show: true,
+      message: 'Error reading or parsing JSON file. Please check file format.',
       type: 'error',
     });
-    return;
   }
-
-  const validImportedQuestions = importedQuestions.filter(
-    (q) =>
-      q.title &&
-      typeof q.title === 'string' &&
-      q.title.trim() !== '' &&
-      Array.isArray(q.answers) &&
-      q.answers.length > 0 &&
-      q.answers.every((a) => a.text && typeof a.text === 'string' && a.text.trim() !== '')
-  );
-
-  if (validImportedQuestions.length === 0) {
-  setNotification({
-      message: 'No valid questions found in the imported file. Please check the file format (title and answer text are required)',
-      type: 'error',
-    });
-  return;  // 别忘了 return
-}
-
-  setQuestions((prevQuestions) => [...prevQuestions, ...validImportedQuestions]);
-  setNotification({ message: `Successfully imported ${validImportedQuestions.length} questions!`, type: 'success' });
 };
   const renderEditorContent = () => {
     switch (currentSubView) {
