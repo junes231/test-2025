@@ -2,22 +2,18 @@ import React from 'react';
 import './Notification.css';
 
 interface NotificationProps {
+  show: boolean;
   message: string;
-  type?: 'success' | 'error';
+  type: 'info' | 'error' | 'success';
   onClose: () => void;
 }
 
-export const Notification: React.FC<NotificationProps> = ({
-  message,
-  type = 'success',
-  onClose
-}) => {
+const Notification: React.FC<NotificationProps> = ({ show, message, type, onClose }) => {
+  if (!show) return null;
   return (
     <div className={`notification ${type}`}>
       <span>{message}</span>
-      <button className="notification-close" onClick={onClose}>
-        ×
-      </button>
+      <button onClick={onClose}>×</button>
     </div>
   );
 };
