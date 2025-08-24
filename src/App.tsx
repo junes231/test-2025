@@ -145,10 +145,18 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   if (!db || !user) return;
 
   // ⬇️ 我们暂时保留浏览器默认的确认框
-  if (window.confirm('Are you sure you want to delete this funnel?')) {
-    try {
-      const funnelDoc = doc(db, 'funnels', funnelId);
-      await deleteDoc(funnelDoc);
+  const ConfirmDialog = ({ open, message, onConfirm, onCancel }) => {
+  if (!open) return null;
+  return (
+    <div className="modal-mask">
+      <div className="modal-content">
+        <p>{message}</p>
+        <button onClick={onConfirm}>Sure</button>
+        <button onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
+  );
+};
 
       // ▼▼▼ 只修改这里 ▼▼▼
       // Before: alert('Funnel deleted.');
