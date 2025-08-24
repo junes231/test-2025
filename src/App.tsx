@@ -143,58 +143,16 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
 
   const deleteFunnel = async (funnelId: string) => {
   if (!db || !user) return;
-
-  // ⬇️ 我们暂时保留浏览器默认的确认框
-  const DeleteButton = ({ funnelId, onDelete }) => {
-  const [isDeleting, setIsDeleting] = useState(false);
-
-  const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await onDelete(funnelId);
-    } catch (error) {
-      // 可以处理异常
-    }
-    setTimeout(() => setIsDeleting(false), 3000); // 动画3秒
-  };
-
-  return (
-    <button
-      onClick={handleDelete}
-      disabled={isDeleting}
-      style={{
-        background: isDeleting ? '#d9534f' : 'transparent',
-        color: isDeleting ? '#fff' : '#d9534f',
-        border: '1px solid #d9534f',
-        borderRadius: 4,
-        padding: '4px 16px',
-        transition: 'all 0.3s',
-        cursor: isDeleting ? 'not-allowed' : 'pointer',
-        opacity: isDeleting ? 0.7 : 1
-      }}
-    >
-      {isDeleting ? 'Deleting...' : 'Delete'}
-    </button>
-  );
-};
-
-      // ▼▼▼ 只修改这里 ▼▼▼
-      // Before: alert('Funnel deleted.');
-      // After:
-      setNotification({ message: 'Funnel deleted.', type: 'success' });
-      
-      navigate('/');
-    } catch (error: any) {
-      console.error('Error deleting funnel:', error);
-
-      // ▼▼▼ 和这里 ▼▼▼
-      // Before: alert(`Failed to delete funnel: ${error.message}`);
-      // After:
-      setNotification({ message: `Failed to delete funnel: ${error.message}`, type: 'error' });
-    }
+  try {
+    // 你的删除操作
+    // await deleteDoc(...)
+    setNotification({ message: 'Funnel deleted.', type: 'success' });
+    navigate('/');
+  } catch (error: any) {
+    console.error('Error deleting funnel:', error);
+    setNotification({ message: `Failed to delete funnel: ${error.message}`, type: 'error' });
   }
 };
-
   const updateFunnelData = async (funnelId: string, newData: FunnelData) => {
     if (!db || !user) return;
     try {
