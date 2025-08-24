@@ -41,3 +41,10 @@
     opacity: 1;
   }
 }
+.deleting {
+  background: #d9534f;
+  color: white;
+  opacity: 0.7;
+  transition: all 0.2s;
+  cursor: not-allowed;
+}
