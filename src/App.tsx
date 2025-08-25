@@ -977,7 +977,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   const navigate = useNavigate();
   const [title, setTitle] = useState(question ? question.title : "");
   const [answers, setAnswers] = useState<Answer[]>(
-    question && question.answers?.length > 0
+    question && question.answers.length > 0
       ? question.answers
       : Array(4)
           .fill(null)
@@ -986,11 +986,13 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
             text: `Option ${String.fromCharCode(65 + i)}`,
           }))
   );
+  const [isSaving, setIsSaving] = useState(false);
 
+  // 每次 question 变化时更新表单
   useEffect(() => {
     setTitle(question ? question.title : "");
     setAnswers(
-      question && question.answers?.length > 0
+      question && question.answers.length > 0
         ? question.answers
         : Array(4)
             .fill(null)
@@ -1001,12 +1003,58 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     );
   }, [question]);
 
+  // 返回列表
   const handleCancel = () => {
     if (question && question.id) {
       navigate(`/edit/${question.id}`);
     } else {
       console.error("Question ID is missing!");
-      // 或者可以 navigate('/list'); // 返回列表页
+    }
+  };
+
+  // 修改答案
+  const handleAnswerTextChange = (index: number, value: string) => {
+    const updatedAnswers = [...answers];
+    if (!updatedAnswers[index]) {
+      updatedAnswers[index] = {
+        id: `option-${Date.now()}-${index}`,
+        text: "",
+      };
+    }
+    updatedAnswers[index].text = value;
+    setAnswers(updatedAnswers);
+  };
+
+  // 保存
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const filteredAnswers = answers.filter(
+        (ans) => ans.text.trim() !== ""
+      );
+
+      if (!title.trim()) {
+        console.error("Question title cannot be empty!");
+        return;
+      }
+      if (filteredAnswers.length === 0) {
+        console.error("Please provide at least one answer option.");
+        return;
+      }
+
+      // 模拟保存逻辑
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+
+      onSave({
+        id: question?.id || Date.now().toString(),
+        title: title,
+        type: "single-choice",
+        answers: filteredAnswers,
+      });
+    } catch (error) {
+      console.error("Error saving question:", error);
+    } finally {
+      setIsSaving(false);
     }
   };
 
