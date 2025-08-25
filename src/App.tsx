@@ -968,6 +968,7 @@ interface QuestionFormComponentProps {
 }
 
 const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
+ const [isDeleting, setIsDeleting] = useState(false); 
   const [title, setTitle] = useState(question ? question.title : '');
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
