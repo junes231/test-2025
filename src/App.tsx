@@ -976,6 +976,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
           .fill(null)
           .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
+   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setTitle(question ? question.title : '');
