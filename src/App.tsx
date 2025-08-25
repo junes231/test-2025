@@ -31,6 +31,14 @@ interface Question {
   answers: Answer[];
 }
 
+interface QuestionFormComponentProps {
+  question?: Question;
+  questionIndex: number | null;
+  onSave: (question: Question) => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
 interface FunnelData {
   questions: Question[];
   finalRedirectLink: string;
