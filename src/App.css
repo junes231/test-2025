@@ -77,22 +77,51 @@ p {
     transform: translateY(-2px);
 }
 
-.cancel-button, .back-button {
-    background-color: #6c757d;
-    color: white;
+/* App.css */
+
+/* 动画效果 */
+.animate-out {
+  animation: fadeOut 3s ease-out forwards;
 }
-.cancel-button:hover, .back-button:hover {
-    background-color: #5a6268;
-    transform: translateY(-2px);
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+
+/* 按钮基础样式 */
+.save-button,
+.cancel-button,
+.delete-button {
+  padding: 8px 16px;
+  margin: 5px;
+  cursor: pointer;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* 按钮默认外观 */
+.save-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+}
+
+.cancel-button {
+  background-color: #6c757d;
+  color: white;
+  border: none;
 }
 
 .delete-button {
-    background-color: #dc3545;
-    color: white;
-}
-.delete-button:hover {
-    background-color: #c82333;
-    transform: translateY(-2px);
+  background-color: #dc3545;
+  color: white;
+  border: none;
 }
 
 /* Dashboard Cards */
