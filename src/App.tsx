@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import PrivateRoute from './components/PrivateRoute.tsx';
-import DeleteButton form './components/DeleteButton.tsx';
+import DeleteButton from './components/DeleteButton.tsx';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
   collection,
