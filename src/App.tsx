@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import PrivateRoute from './components/PrivateRoute.tsx';
-import DeleteButton from './components/DeleteButton.tsx';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
   collection,
@@ -66,7 +65,7 @@ const defaultFunnelData: FunnelData = {
 // REPLACE your old App function with this new one
 export default function App({ db }: AppProps) {
   const navigate = useNavigate();
-  const [isDeleting, setIsDeleting] = useState(false);
+
   // New state variables to manage authentication and user roles
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -473,7 +472,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
-     alert('You can only have up to 6 questions for this quiz.');
+      alert('You can only have up to 6 questions for this quiz.');
       return;
     }
     const newQuestion: Question = {
@@ -969,7 +968,6 @@ interface QuestionFormComponentProps {
 }
 
 const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
- const [isDeleting, setIsDeleting] = useState(false); 
   const [title, setTitle] = useState(question ? question.title : '');
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
@@ -978,7 +976,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
           .fill(null)
           .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
-   
 
   useEffect(() => {
     setTitle(question ? question.title : '');
@@ -1018,73 +1015,79 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       answers: filteredAnswers,
     });
   };
-   
+
   return (
-  <div className="question-form-container">
-    <h2>
-      <span role="img" aria-label="edit">📝</span>{' '}
-      Quiz Question Editor
-    </h2>
-    <p className="question-index-display">
-      {questionIndex !== null ? `Editing Question ${questionIndex + 1} of 6` : 'Adding New Question'}
-    </p>
-    <div className="form-group">
-      <label>Question Title:</label>
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="e.g., What's your biggest health concern?"
-      />
-    </div>
-    <div className="form-group">
-      <label>Question Type:</label>
-      <select value="single-choice" onChange={() => {}} disabled>
-        <option>Single Choice</option>
-        <option>Multiple Choice (Coming Soon)</option>
-        <option>Text Input (Coming Soon)</option>
-      </select>
-    </div>
-    <div className="answer-options-section">
-      <p>Answer Options (Max 4):</p>
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="answer-input-group">
-          <input
-            type="text"
-            value={answers[index]?.text || ''}
-            onChange={(e) => handleAnswerTextChange(index, e.target.value)}
-            placeholder={`Option ${String.fromCharCode(65 + index)}`}
-          />
-        </div>
-      ))}
-    </div>
-    <div className="form-actions">
-      <button className="save-button" onClick={handleSave}>
-        <span role="img" aria-label="save">💾</span> Save Question
-      </button>
-      <button className="cancel-button" onClick={onCancel}>
-        <span role="img" aria-label="cancel">←</span> Back to List
-      </button>
-      {questionIndex !== null && (
-        <button
-          className="delete-button"
-          onClick={onDelete}
-          disabled={isDeleting}
-          style={{
-            background: isDeleting ? '#aaa' : '#dc3545',
-            color: '#fff',
-            opacity: isDeleting ? 0.7 : 1,
-            cursor: isDeleting ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <span role="img" aria-label="delete">🗑️</span>{' '}
-          {isDeleting ? 'Deleting...' : 'Delete Question'}
+    <div className="question-form-container">
+      <h2>
+        <span role="img" aria-label="edit">
+          📝
+        </span>{' '}
+        Quiz Question Editor
+      </h2>
+      <p className="question-index-display">
+        {questionIndex !== null ? `Editing Question ${questionIndex + 1} of 6` : 'Adding New Question'}
+      </p>
+      <div className="form-group">
+        <label>Question Title:</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g., What's your biggest health concern?"
+        />
+      </div>
+      <div className="form-group">
+        <label>Question Type:</label>
+        <select value="single-choice" onChange={() => {}} disabled>
+          <option>Single Choice</option>
+          <option>Multiple Choice (Coming Soon)</option>
+          <option>Text Input (Coming Soon)</option>
+        </select>
+      </div>
+      <div className="answer-options-section">
+        <p>Answer Options (Max 4):</p>
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="answer-input-group">
+            <input
+              type="text"
+              value={answers[index]?.text || ''}
+              onChange={(e) => handleAnswerTextChange(index, e.target.value)}
+              placeholder={`Option ${String.fromCharCode(65 + index)}`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="form-actions">
+        <button className="save-button" onClick={handleSave}>
+          <span role="img" aria-label="save">
+            💾
+          </span>{' '}
+          Save Question
         </button>
-      )}
-    </div>
-  </div>
-); // <== 这里 return 结束，后面不能再写 interface 了
+        <button className="cancel-button" onClick={onCancel}>
+          <span role="img" aria-label="cancel">
+            ←
+          </span>{' '}
+          Back to List
+        </button>
+      {questionIndex !== null && (
+  <button
+    className="delete-button"
+    onClick={onDelete}
+    disabled={isDeleting}
+    style={{
+      background: isDeleting ? '#aaa' : '#dc3545',
+      color: '#fff',
+      opacity: isDeleting ? 0.7 : 1,
+      cursor: isDeleting ? 'not-allowed' : 'pointer',
+      transition: 'all 0.2s'
+    }}
+  >
+    <span role="img" aria-label="delete">🗑️</span>{' '}
+    {isDeleting ? 'Deleting...' : 'Delete Question'}
+  </button>
+)}
+
 interface LinkSettingsComponentProps {
   finalRedirectLink: string;
   setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
