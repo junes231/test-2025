@@ -1082,12 +1082,15 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       cursor: isDeleting ? 'not-allowed' : 'pointer',
       transition: 'all 0.2s'
     }}
-  >
+  
     <span role="img" aria-label="delete">🗑️</span>{' '}
-    {isDeleting ? 'Deleting...' : 'Delete Question'}
+    Delete Question
   </button>
 )}
-
+   </div>
+    </div>
+  );
+};
 interface LinkSettingsComponentProps {
   finalRedirectLink: string;
   setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
