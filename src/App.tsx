@@ -987,7 +987,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
           }))
   );
   const [isSaving, setIsSaving] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false); // 添加 isDeleting 状态
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     setTitle(question ? question.title : "");
@@ -997,14 +997,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         : answers
     );
   }, [question]);
-
-  const handleCancel = () => {
-    if (question && question.id) {
-      navigate(`/edit/${question.id}`);
-    } else {
-      navigate('/');
-    }
-  };
 
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
@@ -1044,15 +1036,27 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     }
   };
 
+  const handleCancel = () => {
+    const button = document.querySelector('.cancel-button');
+    if (button) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        navigate('/');
+      }, 3000); // 3秒后导航
+    }
+  };
+
   const handleDelete = () => {
-    setIsDeleting(true);
-    if (question && question.id) {
-      onDelete();
-      navigate('/');
+    const button = document.querySelector('.delete-button');
+    if (button && question && question.id) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        onDelete();
+        navigate('/');
+      }, 3000); // 3秒后导航并删除
     } else {
       console.error("Question ID is missing!");
     }
-    setIsDeleting(false);
   };
 
   return (
@@ -1111,6 +1115,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     </div>
   );
 };
+
 
 
 const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
