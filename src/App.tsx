@@ -472,7 +472,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const handleAddQuestion = () => {
     if (questions.length >= 6) {
-      alert('You can only have up to 6 questions for this quiz.');
+     alert('You can only have up to 6 questions for this quiz.');
       return;
     }
     const newQuestion: Question = {
@@ -1017,10 +1017,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       answers: filteredAnswers,
     });
   };
-   const handleDelete = () => {
-    setIsDeleting(true);
-    onDelete();
-  };
+   
   return (
   <div className="question-form-container">
     <h2>
