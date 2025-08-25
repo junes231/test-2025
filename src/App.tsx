@@ -987,6 +987,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
           }))
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false); // 添加 isDeleting 状态
 
   useEffect(() => {
     setTitle(question ? question.title : "");
@@ -1001,7 +1002,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (question && question.id) {
       navigate(`/edit/${question.id}`);
     } else {
-      console.error("Question ID is missing!");
+      navigate('/');
     }
   };
 
@@ -1043,16 +1044,21 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     }
   };
 
+  const handleDelete = () => {
+    setIsDeleting(true);
+    if (question && question.id) {
+      onDelete();
+      navigate('/');
+    } else {
+      console.error("Question ID is missing!");
+    }
+    setIsDeleting(false);
+  };
 
-
-  // 修复：确保 return 在组件函数内部
   return (
     <div className="question-form-container">
       <h2>
-        <span role="img" aria-label="edit">
-          📝
-        </span>{' '}
-        Quiz Question Editor
+        <span role="img" aria-label="edit">📝</span> Quiz Question Editor
       </h2>
       <p className="question-index-display">
         {questionIndex !== null
@@ -1091,38 +1097,21 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       </div>
       <div className="form-actions">
         <button className="save-button" onClick={handleSave}>
-          <span role="img" aria-label="save">
-            💾
-          </span>{' '}
-          Save Question
+          <span role="img" aria-label="save">💾</span> Save Question
         </button>
-        <button className="cancel-button" onClick={onCancel}>
-          <span role="img" aria-label="cancel">
-            ←
-          </span>{' '}
-          Back to List
+        <button className="cancel-button" onClick={handleCancel}>
+          <span role="img" aria-label="cancel">←</span> Back to List
         </button>
         {questionIndex !== null && (
-          <button className="delete-button" onClick={onDelete}>
-            <span role="img" aria-label="delete">
-              🗑️
-            </span>{' '}
-            Delete Question
+          <button className="delete-button" onClick={handleDelete}>
+            <span role="img" aria-label="delete">🗑️</span> Delete Question
           </button>
         )}
       </div>
     </div>
   );
 };
-interface LinkSettingsComponentProps {
-  finalRedirectLink: string;
-  setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
-  tracking: string;
-  setTracking: React.Dispatch<React.SetStateAction<string>>;
-  conversionGoal: string;
-  setConversionGoal: React.Dispatch<React.SetStateAction<string>>;
-  onBack: () => void;
-}
+
 
 const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
   finalRedirectLink,
