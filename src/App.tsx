@@ -1087,7 +1087,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
     {isDeleting ? 'Deleting...' : 'Delete Question'}
   </button>
 )}
-
+ </div>
+ </div>
+  );
+}; 
 interface LinkSettingsComponentProps {
   finalRedirectLink: string;
   setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
