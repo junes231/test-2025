@@ -1072,20 +1072,24 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
         </button>
       {questionIndex !== null && (
   <button
-    className="delete-button"
-    onClick={onDelete}
-    disabled={isDeleting}
-    style={{
-      background: isDeleting ? '#aaa' : '#dc3545',
-      color: '#fff',
-      opacity: isDeleting ? 0.7 : 1,
-      cursor: isDeleting ? 'not-allowed' : 'pointer',
-      transition: 'all 0.2s'
-    }}
-  
-    <span role="img" aria-label="delete">🗑️</span>{' '}
-    Delete Question
-  </button>
+  className="delete-button"
+  onClick={onDelete}
+  disabled={isDeleting}
+  style={{
+    background: isDeleting ? '#aaa' : '#dc3545',
+    color: '#fff',
+    opacity: isDeleting ? 0.7 : 1,
+    cursor: isDeleting ? 'not-allowed' : 'pointer',
+    transition: 'all 0.2s',
+  }}
+>
+  {isDeleting ? 'Deleting...' : (
+    <>
+      <span role="img" aria-label="delete">🗑️</span>{' '}
+      Delete Question
+    </>
+  )}
+</button>
 )}
    </div>
     </div>
