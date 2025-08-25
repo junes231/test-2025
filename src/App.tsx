@@ -987,7 +987,20 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
             .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
     );
   }, [question]);
+  const handleCancel = () => {
+    if (question && question.id) {
+      navigate(`/edit/${question.id}`); // 使用 question.id 来生成动态路由
+    } else {
+      console.error('Question ID is missing!');
+    }
+  };
 
+  return (
+    <button className="cancel-button" onClick={handleCancel}>
+      Back to List
+    </button>
+  );
+};
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) {
