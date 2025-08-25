@@ -997,24 +997,31 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
     setAnswers(updatedAnswers);
   };
 
-  const handleSave = () => {
-    if (!title.trim()) {
-      alert('Question title cannot be empty!');
-      return;
-    }
+  const handleSave = async () => {
+  setIsSaving(true); // 启动保存状态
+  try {
     const filteredAnswers = answers.filter((ans) => ans.text.trim() !== '');
-    if (filteredAnswers.length === 0) {
-      alert('Please provide at least one answer option.');
+    if (!title.trim()) {
+      console.error('Question title cannot be empty!');
       return;
     }
-
+    if (filteredAnswers.length === 0) {
+      console.error('Please provide at least one answer option.');
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存逻辑
     onSave({
       id: question?.id || Date.now().toString(),
       title: title,
       type: 'single-choice',
       answers: filteredAnswers,
     });
-  };
+  } catch (error) {
+    console.error('Error saving question:', error);
+  } finally {
+    setIsSaving(false); // 结束保存状态
+  }
+};
 
   return (
     <div className="question-form-container">
