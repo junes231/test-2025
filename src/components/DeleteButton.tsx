@@ -4,15 +4,16 @@ const DeleteButton = ({ funnelId, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    setIsDeleting(true);
-    try {
-      await onDelete(funnelId);
-    } catch (error) {
-      // 可以处理异常
-    }
-    setTimeout(() => setIsDeleting(false), 3000); // 动画3秒
-  };
-
+  setIsDeleting(true); // 启动删除状态
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟删除逻辑
+    onDelete();
+  } catch (error) {
+    console.error('Error deleting question:', error);
+  } finally {
+    setIsDeleting(false); // 结束删除状态
+  }
+};
   return (
     <button
       onClick={handleDelete}
