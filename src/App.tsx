@@ -1011,31 +1011,32 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
   };
 
   const handleSave = async () => {
-  setIsSaving(true); // 启动保存状态
-  try {
-    const filteredAnswers = answers.filter((ans) => ans.text.trim() !== '');
-    if (!title.trim()) {
-      console.error('Question title cannot be empty!');
-      return;
+    setIsSaving(true); // 启动保存状态
+    try {
+      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== '');
+      if (!title.trim()) {
+        console.error('Question title cannot be empty!');
+        return;
+      }
+      if (filteredAnswers.length === 0) {
+        console.error('Please provide at least one answer option.');
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存逻辑
+      onSave({
+        id: question?.id || Date.now().toString(),
+        title: title,
+        type: 'single-choice',
+        answers: filteredAnswers,
+      });
+    } catch (error) {
+      console.error('Error saving question:', error);
+    } finally {
+      setIsSaving(false); // 结束保存状态
     }
-    if (filteredAnswers.length === 0) {
-      console.error('Please provide at least one answer option.');
-      return;
-    }
-    await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存逻辑
-    onSave({
-      id: question?.id || Date.now().toString(),
-      title: title,
-      type: 'single-choice',
-      answers: filteredAnswers,
-    });
-  } catch (error) {
-    console.error('Error saving question:', error);
-  } finally {
-    setIsSaving(false); // 结束保存状态
-  }
-};
+  };
 
+  // 修复：确保 return 在组件函数内部
   return (
     <div className="question-form-container">
       <h2>
@@ -1045,7 +1046,9 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
         Quiz Question Editor
       </h2>
       <p className="question-index-display">
-        {questionIndex !== null ? `Editing Question ${questionIndex + 1} of 6` : 'Adding New Question'}
+        {questionIndex !== null
+          ? `Editing Question ${questionIndex + 1} of 6`
+          : 'Adding New Question'}
       </p>
       <div className="form-group">
         <label>Question Title:</label>
@@ -1102,7 +1105,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
     </div>
   );
 };
-
 interface LinkSettingsComponentProps {
   finalRedirectLink: string;
   setFinalRedirectLink: React.Dispatch<React.SetStateAction<string>>;
