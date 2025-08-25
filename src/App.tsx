@@ -31,14 +31,6 @@ interface Question {
   answers: Answer[];
 }
 
-interface QuestionFormComponentProps {
-  question?: Question;
-  questionIndex: number | null;
-  onSave: (question: Question) => void;
-  onCancel: () => void;
-  onDelete: () => void;
-}
-
 interface FunnelData {
   questions: Question[];
   finalRedirectLink: string;
@@ -73,7 +65,7 @@ const defaultFunnelData: FunnelData = {
 // REPLACE your old App function with this new one
 export default function App({ db }: AppProps) {
   const navigate = useNavigate();
-
+  const [isDeleting, setIsDeleting] = useState(false);
   // New state variables to manage authentication and user roles
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
@@ -984,7 +976,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
           .fill(null)
           .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
   );
-   const [isDeleting, setIsDeleting] = useState(false);
+   
 
   useEffect(() => {
     setTitle(question ? question.title : '');
