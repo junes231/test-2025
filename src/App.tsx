@@ -988,22 +988,15 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   );
   const [isSaving, setIsSaving] = useState(false);
 
-  // 每次 question 变化时更新表单
   useEffect(() => {
     setTitle(question ? question.title : "");
     setAnswers(
       question && question.answers.length > 0
         ? question.answers
-        : Array(4)
-            .fill(null)
-            .map((_, i) => ({
-              id: `option-${Date.now()}-${i}`,
-              text: `Option ${String.fromCharCode(65 + i)}`,
-            }))
+        : answers
     );
   }, [question]);
 
-  // 返回列表
   const handleCancel = () => {
     if (question && question.id) {
       navigate(`/edit/${question.id}`);
@@ -1012,7 +1005,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     }
   };
 
-  // 修改答案
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) {
@@ -1025,14 +1017,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     setAnswers(updatedAnswers);
   };
 
-  // 保存
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const filteredAnswers = answers.filter(
-        (ans) => ans.text.trim() !== ""
-      );
-
+      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== "");
       if (!title.trim()) {
         console.error("Question title cannot be empty!");
         return;
@@ -1041,13 +1029,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         console.error("Please provide at least one answer option.");
         return;
       }
-
-      // 模拟保存逻辑
       await new Promise((resolve) => setTimeout(resolve, 3000));
-
       onSave({
         id: question?.id || Date.now().toString(),
-        title: title,
+        title,
         type: "single-choice",
         answers: filteredAnswers,
       });
@@ -1057,6 +1042,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       setIsSaving(false);
     }
   };
+
 
 
   // 修复：确保 return 在组件函数内部
