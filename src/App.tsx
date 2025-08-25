@@ -1016,7 +1016,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question,
       answers: filteredAnswers,
     });
   };
-
+   const handleDelete = () => {
+    setIsDeleting(true);
+    onDelete();
+  };
   return (
   <div className="question-form-container">
     <h2>
