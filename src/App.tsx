@@ -969,74 +969,49 @@ interface QuestionFormComponentProps {
   onDelete: () => void;
 }
 
-const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({ question, questionIndex, onSave, onCancel, onDelete }) => {
-  const [title, setTitle] = useState(question ? question.title : '');
+const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
+  question,
+  questionIndex,
+  onSave,
+  onCancel,
+  onDelete,
+}) => {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState(question ? question.title : "");
   const [answers, setAnswers] = useState<Answer[]>(
-    question && question.answers.length > 0
+    question && question.answers?.length > 0
       ? question.answers
       : Array(4)
           .fill(null)
-          .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
+          .map((_, i) => ({
+            id: `option-${Date.now()}-${i}`,
+            text: `Option ${String.fromCharCode(65 + i)}`,
+          }))
   );
 
   useEffect(() => {
-    setTitle(question ? question.title : '');
+    setTitle(question ? question.title : "");
     setAnswers(
-      question && question.answers.length > 0
+      question && question.answers?.length > 0
         ? question.answers
         : Array(4)
             .fill(null)
-            .map((_, i) => ({ id: `option-${Date.now()}-${i}`, text: `Option ${String.fromCharCode(65 + i)}` }))
+            .map((_, i) => ({
+              id: `option-${Date.now()}-${i}`,
+              text: `Option ${String.fromCharCode(65 + i)}`,
+            }))
     );
   }, [question]);
+
   const handleCancel = () => {
     if (question && question.id) {
-      navigate(`/edit/${question.id}`); // 使用 question.id 来生成动态路由
+      navigate(`/edit/${question.id}`);
     } else {
-      console.error('Question ID is missing!');
+      console.error("Question ID is missing!");
+      // 或者可以 navigate('/list'); // 返回列表页
     }
   };
 
-  return (
-    <button className="cancel-button" onClick={handleCancel}>
-      Back to List
-    </button>
-  );
-};
-  const handleAnswerTextChange = (index: number, value: string) => {
-    const updatedAnswers = [...answers];
-    if (!updatedAnswers[index]) {
-      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' };
-    }
-    updatedAnswers[index].text = value;
-    setAnswers(updatedAnswers);
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true); // 启动保存状态
-    try {
-      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== '');
-      if (!title.trim()) {
-        console.error('Question title cannot be empty!');
-        return;
-      }
-      if (filteredAnswers.length === 0) {
-        console.error('Please provide at least one answer option.');
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存逻辑
-      onSave({
-        id: question?.id || Date.now().toString(),
-        title: title,
-        type: 'single-choice',
-        answers: filteredAnswers,
-      });
-    } catch (error) {
-      console.error('Error saving question:', error);
-    } finally {
-      setIsSaving(false); // 结束保存状态
-    }
-  };
 
   // 修复：确保 return 在组件函数内部
   return (
