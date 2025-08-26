@@ -10,7 +10,7 @@ interface Answer {
 interface Question {
   id: string;
   title: string;
-  type: string;
+  type: 'single-choice' | 'text-input';
   answers: Answer[];
 }
 
