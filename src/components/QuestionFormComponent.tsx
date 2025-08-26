@@ -87,7 +87,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       };
       await new Promise((resolve) => setTimeout(resolve, 3000)); // 3秒动画
       onSave(savedQuestion);
-      navigate(-1); // 返回上页
+      navigate('/'); // 返回上页
     } catch (error) {
       console.error("Error saving question:", error);
     } finally {
@@ -113,7 +113,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       setTimeout(() => {
         onDelete(); // 调用删除逻辑
         setIsDeleting(true); // 隐藏按钮
-        navigate(-1); // 返回上页
+        navigate('/'); // 返回上页
       }, 3000); // 3秒动画
     } else {
       console.error("Question ID is missing!");
