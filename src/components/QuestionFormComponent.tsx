@@ -87,7 +87,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       };
       await new Promise((resolve) => setTimeout(resolve, 3000)); // 3秒动画
       onSave(savedQuestion);
-      navigate(-1); // 返回上页（问题列表页面）
+      navigate(-1); // 返回上页 (/edit/:funnelId)
     } catch (error) {
       console.error("Error saving question:", error);
     } finally {
@@ -100,7 +100,8 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        navigate('/funnel'); // 返回漏斗页面
+        onCancel(); // 调用父组件的取消逻辑
+        navigate(-1); // 返回上页 (/edit/:funnelId)
       }, 3000); // 3秒动画
     }
   };
@@ -112,7 +113,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       setTimeout(() => {
         onDelete(); // 调用删除逻辑
         setIsDeleting(true); // 隐藏按钮
-        navigate(-1); // 返回上页（问题列表页面）
+        navigate(-1); // 返回上页 (/edit/:funnelId)
       }, 3000); // 3秒动画
     } else {
       console.error("Question ID is missing!");
