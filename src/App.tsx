@@ -496,20 +496,51 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
 
   const handleDeleteQuestion = () => {
   if (selectedQuestionIndex !== null) {
-    setIsDeleting(true); // 开始动画
-    const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
-    setQuestions(updatedQuestions);
-    setSelectedQuestionIndex(null);
-    setCurrentSubView('quizEditorList');
-    setNotification({ message: 'Question deleted.', type: 'success' });
-
-    setTimeout(() => {
-      setIsDeleting(false); // 3秒后恢复
-      // 这里可做跳转或其它操作
-    }, 3000);
+    const button = document.querySelector('.delete-button'); // 约第 135 行
+    if (button) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
+        setQuestions(updatedQuestions);
+        setSelectedQuestionIndex(null);
+        setCurrentSubView('quizEditorList');
+        try {
+          saveFunnelToFirestore(); // 保存更改到 Firestore
+        } catch (error) {
+          console.error('Failed to save funnel data:', error);
+        }
+        navigate(-1); // 返回 /edit/:funnelId
+      }, 3000); // 3秒动画
+    } else {
+      console.warn('Delete button not found, animation skipped.');
+      // 备用逻辑：直接执行删除
+      const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
+      setQuestions(updatedQuestions);
+      setSelectedQuestionIndex(null);
+      setCurrentSubView('quizEditorList');
+      saveFunnelToFirestore();
+      navigate(-1);
+    }
   }
 };
 
+const handleCancel = () => {
+  const button = document.querySelector('.cancel-button'); // 约第 145 行
+  if (button) {
+    button.classList.add('animate-out');
+    setTimeout(() => {
+      setSelectedQuestionIndex(null);
+      setCurrentSubView('quizEditorList');
+      navigate('/funnel'); // 返回 /funnel
+    }, 3000); // 3秒动画
+  } else {
+    console.warn('Cancel button not found, animation skipped.');
+    // 备用逻辑：直接取消
+    setSelectedQuestionIndex(null);
+    setCurrentSubView('quizEditorList');
+    navigate('/funnel');
+  }
+};
 const handleImportQuestions = (importedQuestions: Question[]) => {
   try {
     if (questions.length + importedQuestions.length > 6) {
@@ -582,7 +613,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
               setSelectedQuestionIndex(null);
               setCurrentSubView('quizEditorList');
             }}
-            onCancel={handleDeleteQuestion}
+            onCancel={handleCancel}
             onDelete={handleDeleteQuestion}
           />
         );
