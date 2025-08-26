@@ -34,7 +34,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   currentQuestionCount,
 }) => {
   const navigate = useNavigate();
-  const [title, setTitle] = useState(question ? question.title : "");
+  const [title, setTitle] = useState(question ? question.title : '');
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
       ? question.answers
@@ -47,7 +47,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    setTitle(question ? question.title : "");
+    setTitle(question ? question.title : '');
     setAnswers(
       question && question.answers.length > 0
         ? question.answers
@@ -61,7 +61,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) {
-      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: "" };
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: '' };
     }
     updatedAnswers[index].text = value;
     setAnswers(updatedAnswers);
@@ -70,26 +70,26 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== "");
+      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== '');
       if (!title.trim()) {
-        console.error("Question title cannot be empty!");
+        console.error('Question title cannot be empty!');
         return;
       }
       if (filteredAnswers.length === 0) {
-        console.error("Please provide at least one answer option!");
+        console.error('Please provide at least one answer option!');
         return;
       }
       const savedQuestion = {
         id: question?.id || Date.now().toString(),
         title,
-        type: "single-choice",
+        type: 'single-choice',
         answers: filteredAnswers,
       };
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // 3秒动画
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 3-second animation
       onSave(savedQuestion);
-      navigate('/'); // 返回上页
+      navigate(-1); // Return to /edit/:funnelId
     } catch (error) {
-      console.error("Error saving question:", error);
+      console.error('Error saving question:', error);
     } finally {
       setIsSaving(false);
     }
@@ -100,9 +100,9 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        onCancel(); // 调用父组件的取消逻辑
-        navigate('/funnel'); // 返回漏斗页面
-      }, 3000); // 3秒动画
+        onCancel();
+        navigate('/funnel'); // Return to /funnel
+      }, 3000); // 3-second animation
     }
   };
 
@@ -111,12 +111,12 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button && question && question.id) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        onDelete(); // 调用删除逻辑
-        setIsDeleting(true); // 隐藏按钮
-        navigate('/'); // 返回上页
-      }, 3000); // 3秒动画
+        onDelete(); // Execute delete logic
+        setIsDeleting(true); // Hide button
+        navigate(-1); // Return to /edit/:funnelId
+      }, 3000); // 3-second animation
     } else {
-      console.error("Question ID is missing!");
+      console.error('Question ID is missing!');
     }
   };
 
