@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import PrivateRoute from './components/PrivateRoute.tsx';
-import QuestionFormComponent from './components/QuestionFormComponent.tsx';
 import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
   collection,
@@ -30,16 +29,6 @@ interface Question {
   title: string;
   type: 'single-choice' | 'text-input';
   answers: Answer[];
-}
-
-interface QuestionFormComponentProps {
-  question?: Question;
-  questionIndex: number | null;
-  onSave: (question: Question) => void;
-  onCancel: () => void;
-  onDelete: () => void;
-  maxQuestions: number;
-  currentQuestionCount: number;
 }
 
 interface FunnelData {
@@ -505,50 +494,21 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const handleDeleteQuestion = () => {
-    if (selectedQuestionIndex !== null) {
-      const button = document.querySelector('.delete-button');
-      if (button) {
-        button.classList.add('animate-out');
-        setTimeout(() => {
-          const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
-          setQuestions(updatedQuestions);
-          setSelectedQuestionIndex(null);
-          setCurrentSubView('quizEditorList');
-          try {
-            saveFunnelToFirestore(); // 保存更改到 Firestore
-            navigate(`/edit/${funnelId}`); // 明确返回 /edit/:funnelId
-          } catch (error) {
-            console.error('Failed to save funnel data:', error);
-          }
-        }, 3000); // 3秒动画
-      } else {
-        console.warn('Delete button not found, animation skipped.');
-        const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
-        setQuestions(updatedQuestions);
-        setSelectedQuestionIndex(null);
-        setCurrentSubView('quizEditorList');
-        saveFunnelToFirestore();
-        navigate(`/edit/${funnelId}`);
-      }
-    }
-  };
+  if (selectedQuestionIndex !== null) {
+    setIsDeleting(true); // 开始动画
+    const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
+    setQuestions(updatedQuestions);
+    setSelectedQuestionIndex(null);
+    setCurrentSubView('quizEditorList');
+    setNotification({ message: 'Question deleted.', type: 'success' });
 
-  const handleCancel = () => {
-    const button = document.querySelector('.cancel-button');
-    if (button) {
-      button.classList.add('animate-out');
-      setTimeout(() => {
-        setSelectedQuestionIndex(null);
-        setCurrentSubView('quizEditorList');
-        navigate(`/edit/${funnelId}`); // 修正为返回 /edit/:funnelId
-      }, 3000); // 3秒动画
-    } else {
-      console.warn('Cancel button not found, animation skipped.');
-      setSelectedQuestionIndex(null);
-      setCurrentSubView('quizEditorList');
-      navigate(`/edit/${funnelId}`);
-    }
-  };
+    setTimeout(() => {
+      setIsDeleting(false); // 3秒后恢复
+      // 这里可做跳转或其它操作
+    }, 3000);
+  }
+};
+
 const handleImportQuestions = (importedQuestions: Question[]) => {
   try {
     if (questions.length + importedQuestions.length > 6) {
@@ -593,7 +553,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
     });
   }
 };
-  const renderEditorContent = () => { // 约第 140 行
+  const renderEditorContent = () => {
     switch (currentSubView) {
       case 'quizEditorList':
         return (
@@ -605,7 +565,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
             onImportQuestions={handleImportQuestions}
           />
         );
-      case 'questionForm': // 约第 150 行
+      case 'questionForm':
         const questionToEdit = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
         return (
           <QuestionFormComponent
@@ -620,12 +580,9 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
               });
               setSelectedQuestionIndex(null);
               setCurrentSubView('quizEditorList');
-              saveFunnelToFirestore();
             }}
-            onCancel={handleCancel}
+            onCancel={handleDeleteQuestion}
             onDelete={handleDeleteQuestion}
-            maxQuestions={6}
-            currentQuestionCount={questions.length}
           />
         );
       case 'linkSettings':
@@ -1002,6 +959,228 @@ const QuizEditorComponent: React.FC<QuizEditorComponentProps> = ({ questions, on
   );
 };
 
+interface QuestionFormComponentProps {
+  question?: Question;
+  questionIndex: number | null;
+  onSave: (question: Question) => void;
+  onCancel: () => void;
+  onDelete: () => void;
+}
+
+const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
+  question,
+  questionIndex,
+  onSave,
+  onCancel,
+  onDelete,
+}) => {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState(question ? question.title : "");
+  const [answers, setAnswers] = useState<Answer[]>(
+    question && question.answers.length > 0
+      ? question.answers
+      : Array(4)
+          .fill(null)
+          .map((_, i) => ({
+            id: `option-${Date.now()}-${i}`,
+            text: `Option ${String.fromCharCode(65 + i)}`,
+          }))
+  );
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setTitle(question ? question.title : "");
+    setAnswers(
+      question && question.answers.length > 0
+        ? question.answers
+        : answers
+    );
+  }, [question]);
+
+  const handleAnswerTextChange = (index: number, value: string) => {
+    const updatedAnswers = [...answers];
+    if (!updatedAnswers[index]) {
+      updatedAnswers[index] = {
+        id: `option-${Date.now()}-${index}`,
+        text: "",
+      };
+    }
+    updatedAnswers[index].text = value;
+    setAnswers(updatedAnswers);
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const filteredAnswers = answers.filter((ans) => ans.text.trim() !== "");
+      if (!title.trim()) {
+        console.error("Question title cannot be empty!");
+        return;
+      }
+      if (filteredAnswers.length === 0) {
+        console.error("Please provide at least one answer option.");
+        return;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      onSave({
+        id: question?.id || Date.now().toString(),
+        title,
+        type: "single-choice",
+        answers: filteredAnswers,
+      });
+    } catch (error) {
+      console.error("Error saving question:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    const button = document.querySelector('.cancel-button');
+    if (button) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        navigate('/');
+      }, 3000); // 3秒后导航
+    }
+  };
+
+  const handleDelete = () => {
+    const button = document.querySelector('.delete-button');
+    if (button && question && question.id) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        onDelete();
+        navigate('/');
+      }, 3000); // 3秒后导航并删除
+    } else {
+      console.error("Question ID is missing!");
+    }
+  };
+
+  return (
+    <div className="question-form-container">
+      <h2>
+        <span role="img" aria-label="edit">📝</span> Quiz Question Editor
+      </h2>
+      <p className="question-index-display">
+        {questionIndex !== null
+          ? `Editing Question ${questionIndex + 1} of 6`
+          : 'Adding New Question'}
+      </p>
+      <div className="form-group">
+        <label>Question Title:</label>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="e.g., What's your biggest health concern?"
+        />
+      </div>
+      <div className="form-group">
+        <label>Question Type:</label>
+        <select value="single-choice" onChange={() => {}} disabled>
+          <option>Single Choice</option>
+          <option>Multiple Choice (Coming Soon)</option>
+          <option>Text Input (Coming Soon)</option>
+        </select>
+      </div>
+      <div className="answer-options-section">
+        <p>Answer Options (Max 4):</p>
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="answer-input-group">
+            <input
+              type="text"
+              value={answers[index]?.text || ''}
+              onChange={(e) => handleAnswerTextChange(index, e.target.value)}
+              placeholder={`Option ${String.fromCharCode(65 + index)}`}
+            />
+          </div>
+        ))}
+      </div>
+      <div className="form-actions">
+        <button className="save-button" onClick={handleSave}>
+          <span role="img" aria-label="save">💾</span> Save Question
+        </button>
+        <button className="cancel-button" onClick={handleCancel}>
+          <span role="img" aria-label="cancel">←</span> Back to List
+        </button>
+        {questionIndex !== null && (
+          <button className="delete-button" onClick={handleDelete}>
+            <span role="img" aria-label="delete">🗑️</span> Delete Question
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+
+
+
+const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
+  finalRedirectLink,
+  setFinalRedirectLink,
+  tracking,
+  setTracking,
+  conversionGoal,
+  setConversionGoal,
+  onBack,
+}) => {
+  return (
+    <div className="link-settings-container">
+      <h2>
+        <span role="img" aria-label="link">
+          🔗
+        </span>{' '}
+        Final Redirect Link Settings
+      </h2>
+      <p>This is the custom link where users will be redirected after completing the quiz.</p>
+      <div className="form-group">
+        <label>Custom Final Redirect Link:</label>
+        <input
+          type="text"
+          value={finalRedirectLink}
+          onChange={(e) => setFinalRedirectLink(e.target.value)}
+          placeholder="https://your-custom-product-page.com"
+        />
+      </div>
+      <div className="form-group">
+        <label>Optional: Tracking Parameters:</label>
+        <input
+          type="text"
+          value={tracking}
+          onChange={(e) => setTracking(e.target.value)}
+          placeholder="utm_source=funnel&utm_campaign=..."
+        />
+      </div>
+      <div className="form-group">
+        <label>Conversion Goal:</label>
+        <select value={conversionGoal} onChange={(e) => setConversionGoal(e.target.value)}>
+          <option>Product Purchase</option>
+          <option>Email Subscription</option>
+          <option>Free Trial</option>
+        </select>
+      </div>
+      <div className="form-actions">
+      <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
+      <span role="img" aria-label="save">
+        💾
+      </span>{' '}
+       Applied
+       </button>
+        <button className="cancel-button" onClick={onBack}>
+          <span role="img" aria-label="back">
+            ←
+          </span>{' '}
+          Back to Editor
+        </button>
+      </div>
+    </div>
+  );
+};
 
 interface ColorCustomizerComponentProps {
   primaryColor: string;
