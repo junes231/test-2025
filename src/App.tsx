@@ -1047,17 +1047,20 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   };
 
   const handleDelete = () => {
+    setIsDeleting(true); // ✅ 现在不会报错了
+
     const button = document.querySelector('.delete-button');
-    if (button && question && question.id) {
+    if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
         onDelete();
-        navigate('/');
-      }, 3000); // 3秒后导航并删除
+        navigate(-1, { replace: true }); // 跳转到列表页（换成你真正的路径）
+      }, 3000);
     } else {
-      console.error("Question ID is missing!");
-    }
-  };
+    console.error("Question ID is missing!");
+  }
+};
+  
 
   return (
     <div className="question-form-container">
