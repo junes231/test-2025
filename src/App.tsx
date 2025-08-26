@@ -495,52 +495,50 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   };
 
   const handleDeleteQuestion = () => {
-  if (selectedQuestionIndex !== null) {
-    const button = document.querySelector('.delete-button'); // 约第 135 行
-    if (button) {
-      button.classList.add('animate-out');
-      setTimeout(() => {
+    if (selectedQuestionIndex !== null) {
+      const button = document.querySelector('.delete-button');
+      if (button) {
+        button.classList.add('animate-out');
+        setTimeout(() => {
+          const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
+          setQuestions(updatedQuestions);
+          setSelectedQuestionIndex(null);
+          setCurrentSubView('quizEditorList');
+          try {
+            saveFunnelToFirestore(); // 保存更改到 Firestore
+            navigate(`/edit/${funnelId}`); // 明确返回 /edit/:funnelId
+          } catch (error) {
+            console.error('Failed to save funnel data:', error);
+          }
+        }, 3000); // 3秒动画
+      } else {
+        console.warn('Delete button not found, animation skipped.');
         const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
         setQuestions(updatedQuestions);
         setSelectedQuestionIndex(null);
         setCurrentSubView('quizEditorList');
-        try {
-          saveFunnelToFirestore(); // 保存更改到 Firestore
-        } catch (error) {
-          console.error('Failed to save funnel data:', error);
-        }
-        navigate(-1); // 返回 /edit/:funnelId
+        saveFunnelToFirestore();
+        navigate(`/edit/${funnelId}`);
+      }
+    }
+  };
+
+  const handleCancel = () => {
+    const button = document.querySelector('.cancel-button');
+    if (button) {
+      button.classList.add('animate-out');
+      setTimeout(() => {
+        setSelectedQuestionIndex(null);
+        setCurrentSubView('quizEditorList');
+        navigate(`/edit/${funnelId}`); // 修正为返回 /edit/:funnelId
       }, 3000); // 3秒动画
     } else {
-      console.warn('Delete button not found, animation skipped.');
-      // 备用逻辑：直接执行删除
-      const updatedQuestions = questions.filter((_, i) => i !== selectedQuestionIndex);
-      setQuestions(updatedQuestions);
+      console.warn('Cancel button not found, animation skipped.');
       setSelectedQuestionIndex(null);
       setCurrentSubView('quizEditorList');
-      saveFunnelToFirestore();
-      navigate(-1);
+      navigate(`/edit/${funnelId}`);
     }
-  }
-};
-
-const handleCancel = () => {
-  const button = document.querySelector('.cancel-button'); // 约第 145 行
-  if (button) {
-    button.classList.add('animate-out');
-    setTimeout(() => {
-      setSelectedQuestionIndex(null);
-      setCurrentSubView('quizEditorList');
-      navigate('/funnel'); // 返回 /funnel
-    }, 3000); // 3秒动画
-  } else {
-    console.warn('Cancel button not found, animation skipped.');
-    // 备用逻辑：直接取消
-    setSelectedQuestionIndex(null);
-    setCurrentSubView('quizEditorList');
-    navigate('/funnel');
-  }
-};
+  };
 const handleImportQuestions = (importedQuestions: Question[]) => {
   try {
     if (questions.length + importedQuestions.length > 6) {
