@@ -85,9 +85,9 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         type: 'single-choice',
         answers: filteredAnswers,
       };
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // 3-second animation
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 3秒动画
       onSave(savedQuestion);
-      navigate(-1); // Return to /edit/:funnelId
+      navigate(-1); // 返回问题列表页面 (/edit/:funnelId)
     } catch (error) {
       console.error('Error saving question:', error);
     } finally {
@@ -100,9 +100,9 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        onCancel();
-        navigate('/funnel'); // Return to /funnel
-      }, 3000); // 3-second animation
+        onCancel(); // 调用父组件的取消逻辑
+        navigate('/funnel'); // 返回 /funnel 编辑页面
+      }, 3000); // 3秒动画
     }
   };
 
@@ -111,10 +111,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button && question && question.id) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        onDelete(); // Execute delete logic
-        setIsDeleting(true); // Hide button
-        navigate(-1); // Return to /edit/:funnelId
-      }, 3000); // 3-second animation
+        onDelete(); // 调用删除逻辑
+        setIsDeleting(true); // 隐藏按钮
+        navigate(-1); // 返回问题列表页面 (/edit/:funnelId)
+      }, 3000); // 3秒动画
     } else {
       console.error('Question ID is missing!');
     }
