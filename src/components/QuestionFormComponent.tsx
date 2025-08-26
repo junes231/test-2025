@@ -101,7 +101,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       button.classList.add('animate-out');
       setTimeout(() => {
         onCancel(); // 调用父组件的取消逻辑
-        navigate('/funnel'); // 返回 /funnel 编辑页面
+        navigate('/'); // 返回 /funnel 编辑页面
       }, 3000); // 3秒动画
     }
   };
