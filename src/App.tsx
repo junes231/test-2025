@@ -965,6 +965,8 @@ interface QuestionFormComponentProps {
   onSave: (question: Question) => void;
   onCancel: () => void;
   onDelete: () => void;
+  maxQuestions: number;
+  currentQuestionCount: number;
 }
 
 const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
@@ -973,18 +975,18 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   onSave,
   onCancel,
   onDelete,
+  maxQuestions,
+  currentQuestionCount,
 }) => {
   const navigate = useNavigate();
   const [title, setTitle] = useState(question ? question.title : "");
   const [answers, setAnswers] = useState<Answer[]>(
     question && question.answers.length > 0
       ? question.answers
-      : Array(4)
-          .fill(null)
-          .map((_, i) => ({
-            id: `option-${Date.now()}-${i}`,
-            text: `Option ${String.fromCharCode(65 + i)}`,
-          }))
+      : Array(4).fill(null).map((_, i) => ({
+          id: `option-${Date.now()}-${i}`,
+          text: `Option ${String.fromCharCode(65 + i)}`,
+        }))
   );
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -994,17 +996,17 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     setAnswers(
       question && question.answers.length > 0
         ? question.answers
-        : answers
+        : Array(4).fill(null).map((_, i) => ({
+            id: `option-${Date.now()}-${i}`,
+            text: `Option ${String.fromCharCode(65 + i)}`,
+          }))
     );
   }, [question]);
 
   const handleAnswerTextChange = (index: number, value: string) => {
     const updatedAnswers = [...answers];
     if (!updatedAnswers[index]) {
-      updatedAnswers[index] = {
-        id: `option-${Date.now()}-${index}`,
-        text: "",
-      };
+      updatedAnswers[index] = { id: `option-${Date.now()}-${index}`, text: "" };
     }
     updatedAnswers[index].text = value;
     setAnswers(updatedAnswers);
@@ -1019,7 +1021,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         return;
       }
       if (filteredAnswers.length === 0) {
-        console.error("Please provide at least one answer option.");
+        console.error("Please provide at least one answer option!");
         return;
       }
       const savedQuestion = {
@@ -1028,9 +1030,9 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         type: "single-choice",
         answers: filteredAnswers,
       };
-      await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存延迟
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 3秒动画
       onSave(savedQuestion);
-      navigate('/'); // 保存后返回问题列表页面
+      navigate(-1); // 返回上页（问题列表页面）
     } catch (error) {
       console.error("Error saving question:", error);
     } finally {
@@ -1043,7 +1045,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        navigate('/'); // 返回问题列表页面（调整为实际路径）
+        navigate('/funnel'); // 返回漏斗页面
       }, 3000); // 3秒动画
     }
   };
@@ -1055,7 +1057,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       setTimeout(() => {
         onDelete(); // 调用删除逻辑
         setIsDeleting(true); // 隐藏按钮
-        navigate('/'); // 删除后返回问题列表页面，与 save 一致
+        navigate(-1); // 返回上页（问题列表页面）
       }, 3000); // 3秒动画
     } else {
       console.error("Question ID is missing!");
@@ -1069,7 +1071,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       </h2>
       <p className="question-index-display">
         {questionIndex !== null
-          ? `Editing Question ${questionIndex + 1} of 6`
+          ? `Editing Question ${questionIndex + 1} of ${maxQuestions}`
           : 'Adding New Question'}
       </p>
       <div className="form-group">
@@ -1118,8 +1120,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     </div>
   );
 };
-
-
 interface ColorCustomizerComponentProps {
   primaryColor: string;
   setPrimaryColor: React.Dispatch<React.SetStateAction<string>>;
