@@ -593,7 +593,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
     });
   }
 };
-  const renderEditorContent = () => {
+  const renderEditorContent = () => { // 约第 140 行
     switch (currentSubView) {
       case 'quizEditorList':
         return (
@@ -605,7 +605,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
             onImportQuestions={handleImportQuestions}
           />
         );
-      case 'questionForm':
+      case 'questionForm': // 约第 150 行
         const questionToEdit = selectedQuestionIndex !== null ? questions[selectedQuestionIndex] : undefined;
         return (
           <QuestionFormComponent
@@ -620,9 +620,12 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
               });
               setSelectedQuestionIndex(null);
               setCurrentSubView('quizEditorList');
+              saveFunnelToFirestore();
             }}
             onCancel={handleCancel}
             onDelete={handleDeleteQuestion}
+            maxQuestions={6}
+            currentQuestionCount={questions.length}
           />
         );
       case 'linkSettings':
