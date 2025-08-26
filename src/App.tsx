@@ -581,7 +581,7 @@ const handleImportQuestions = (importedQuestions: Question[]) => {
               setSelectedQuestionIndex(null);
               setCurrentSubView('quizEditorList');
             }}
-            onCancel={handleDeleteQuestion}
+            onCancel={handleCancel}
             onDelete={handleDeleteQuestion}
           />
         );
