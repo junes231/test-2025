@@ -1022,13 +1022,15 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         console.error("Please provide at least one answer option.");
         return;
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-      onSave({
+      const savedQuestion = {
         id: question?.id || Date.now().toString(),
         title,
         type: "single-choice",
         answers: filteredAnswers,
-      });
+      };
+      await new Promise((resolve) => setTimeout(resolve, 3000)); // 模拟保存延迟
+      onSave(savedQuestion);
+      navigate('/'); // 保存后返回问题列表页面
     } catch (error) {
       console.error("Error saving question:", error);
     } finally {
@@ -1041,8 +1043,8 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        navigate('/');
-      }, 3000); // 3秒后导航
+        navigate('/'); // 返回问题列表页面（调整为实际路径）
+      }, 3000); // 3秒动画
     }
   };
 
@@ -1051,9 +1053,10 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
     if (button && question && question.id) {
       button.classList.add('animate-out');
       setTimeout(() => {
-        onDelete();
-        navigate('/');
-      }, 3000); // 3秒后导航并删除
+        onDelete(); // 调用删除逻辑
+        setIsDeleting(true); // 隐藏按钮
+        navigate('/'); // 删除后返回问题列表页面，与 save 一致
+      }, 3000); // 3秒动画
     } else {
       console.error("Question ID is missing!");
     }
@@ -1100,13 +1103,13 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         ))}
       </div>
       <div className="form-actions">
-        <button className="save-button" onClick={handleSave}>
+        <button className="save-button" onClick={handleSave} disabled={isSaving}>
           <span role="img" aria-label="save">💾</span> Save Question
         </button>
         <button className="cancel-button" onClick={handleCancel}>
           <span role="img" aria-label="cancel">←</span> Back to List
         </button>
-        {questionIndex !== null && (
+        {questionIndex !== null && !isDeleting && (
           <button className="delete-button" onClick={handleDelete}>
             <span role="img" aria-label="delete">🗑️</span> Delete Question
           </button>
@@ -1116,71 +1119,6 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
   );
 };
 
-
-
-
-
-const LinkSettingsComponent: React.FC<LinkSettingsComponentProps> = ({
-  finalRedirectLink,
-  setFinalRedirectLink,
-  tracking,
-  setTracking,
-  conversionGoal,
-  setConversionGoal,
-  onBack,
-}) => {
-  return (
-    <div className="link-settings-container">
-      <h2>
-        <span role="img" aria-label="link">
-          🔗
-        </span>{' '}
-        Final Redirect Link Settings
-      </h2>
-      <p>This is the custom link where users will be redirected after completing the quiz.</p>
-      <div className="form-group">
-        <label>Custom Final Redirect Link:</label>
-        <input
-          type="text"
-          value={finalRedirectLink}
-          onChange={(e) => setFinalRedirectLink(e.target.value)}
-          placeholder="https://your-custom-product-page.com"
-        />
-      </div>
-      <div className="form-group">
-        <label>Optional: Tracking Parameters:</label>
-        <input
-          type="text"
-          value={tracking}
-          onChange={(e) => setTracking(e.target.value)}
-          placeholder="utm_source=funnel&utm_campaign=..."
-        />
-      </div>
-      <div className="form-group">
-        <label>Conversion Goal:</label>
-        <select value={conversionGoal} onChange={(e) => setConversionGoal(e.target.value)}>
-          <option>Product Purchase</option>
-          <option>Email Subscription</option>
-          <option>Free Trial</option>
-        </select>
-      </div>
-      <div className="form-actions">
-      <button className="save-button" onClick={() => showNotification('Settings applied! (Auto-saved)')}>
-      <span role="img" aria-label="save">
-        💾
-      </span>{' '}
-       Applied
-       </button>
-        <button className="cancel-button" onClick={onBack}>
-          <span role="img" aria-label="back">
-            ←
-          </span>{' '}
-          Back to Editor
-        </button>
-      </div>
-    </div>
-  );
-};
 
 interface ColorCustomizerComponentProps {
   primaryColor: string;
