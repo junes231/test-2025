@@ -92,7 +92,7 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   
   setTimeout(() => {
     setNotification(prev => ({ ...prev, visible: false }));
-  }, 3000);
+  }, 2000);
 };
   // useEffect for Authentication and Role checking
   useEffect(() => {
@@ -506,7 +506,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     setTimeout(() => {
       setIsDeleting(false); // 3秒后恢复
       // 这里可做跳转或其它操作
-    }, 3000);
+    }, 2000);
   }
 };
  const handleCancel = () => {
@@ -1026,7 +1026,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
         console.error("Please provide at least one answer option.");
         return;
       }
-      await new Promise((resolve) => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       onSave({
         id: question?.id || Date.now().toString(),
         title,
@@ -1046,7 +1046,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       button.classList.add('animate-out');
       setTimeout(() => {
         navigate('/');
-      }, 3000); // 3秒后导航
+      }, 2000); // 3秒后导航
     }
   };
 
@@ -1059,7 +1059,7 @@ const QuestionFormComponent: React.FC<QuestionFormComponentProps> = ({
       setTimeout(() => {
         onDelete();
         navigate(-1, { replace: true }); // 跳转到列表页（换成你真正的路径）
-      }, 3000);
+      }, 2000);
     } else {
     console.error("Question ID is missing!");
   }
