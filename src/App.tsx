@@ -508,7 +508,10 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
     }, 3000);
   }
 };
-
+ const handleCancel = () => {
+    setSelectedQuestionIndex(null);
+    setCurrentSubView('funnelEditor'); // 返回漏斗编辑页
+  };
 const handleImportQuestions = (importedQuestions: Question[]) => {
   try {
     if (questions.length + importedQuestions.length > 6) {
