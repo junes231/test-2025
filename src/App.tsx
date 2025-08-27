@@ -316,19 +316,14 @@ const FunnelDashboard: React.FC<FunnelDashboardProps> = ({ db, user, isAdmin, fu
   };
   
   const handleCopyLink = (funnelId: string) => {
-  // 使用 window.location.href 获取完整的当前URL
-  const baseUrl = window.location.href.split('#')[0];
-  // 构建完整的funnel链接
-  const url = `${baseUrl}/funnel-editor-2025/#/play/${funnelId}`;
-  
-  // 使用clipboard API
-  navigator.clipboard.writeText(url).then(() => {
-    // 使用自定义通知而不是alert
-    showNotification('Funnel link copied to clipboard!');
-  }).catch(err => {
-    console.error('Failed to copy:', err);
-    showNotification('Failed to copy link', 'error');
-  });
+  const url = `${window.location.origin}/play/${funnelId}`;
+
+  navigator.clipboard.writeText(url)
+    .then(() => showNotification('Funnel link copied to clipboard!'))
+    .catch(err => {
+      console.error('Failed to copy:', err);
+      showNotification('Failed to copy link', 'error');
+    });
 };
   
   return (
@@ -685,34 +680,37 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const getFunnelForPlay = async () => {
-      if (!funnelId) {
-        setError('No funnel ID provided!');
-        setIsLoading(false);
-        return;
+  const getFunnelForPlay = async () => {
+    if (!funnelId) {
+      setError('No funnel ID provided!');
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const funnelDocRef = doc(db, 'funnels', funnelId);
+      const funnelDoc = await getDoc(funnelDocRef);
+
+      if (funnelDoc.exists()) {
+        const funnel = funnelDoc.data() as FunnelData;
+        setFunnelData({ ...defaultFunnelData, ...funnel });
+        console.log('QuizPlayer: Loaded funnel data for play:', funnel);
+      } else {
+        setError('Funnel not found! Please check the link or contact the funnel creator.');
       }
-      setIsLoading(true);
-      setError(null);
-      try {
-        const funnelDocRef = doc(db, 'funnels', funnelId);
-        const funnelDoc = await getDoc(funnelDocRef);
-        if (funnelDoc.exists()) {
-          const funnel = funnelDoc.data() as Funnel;
-          setFunnelData({ ...defaultFunnelData, ...funnel.data });
-          console.log('QuizPlayer: Loaded funnel data for play:', funnel.data);
-          console.log('QuizPlayer: Loaded finalRedirectLink for play:', funnel.data.finalRedirectLink);
-        } else {
-          setError('Funnel not found! Please check the link or contact the funnel creator.');
-        }
-      } catch (err) {
-        console.error('Error loading funnel for play:', err);
-        setError('Failed to load quiz. Please check your internet connection and Firebase rules.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getFunnelForPlay();
-  }, [funnelId, db]);
+    } catch (err) {
+      console.error('Error loading funnel for play:', err);
+      setError('Failed to load quiz. Please check your internet connection and Firebase rules.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  getFunnelForPlay();
+}, [funnelId]);
 
   const handleAnswerClick = (answerIndex: number) => {
     if (isAnimating || !funnelData) return;
