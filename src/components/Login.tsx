@@ -56,9 +56,12 @@ export default function Login() {
         >
           {isLoginView ? 'Log in' : 'register'}
         </button>
-        <p onClick={() => setIsLoginView(!isLoginView)} style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}>
-          {isLoginView ? 'Don\'t have an account yet? Click here to register' : 'Already have an account? Log in'}
-          {/* ===== START: ADD THIS CODE BLOCK ===== */}
+       <p 
+  onClick={() => setIsLoginView(!isLoginView)} 
+  style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginBottom: 12 }}
+>
+  {isLoginView ? 'Don\'t have an account yet? Click here to register' : 'Already have an account? Log in'}
+</p>
 <div className="mt-6 text-center text-xs text-gray-400">
   <p>By logging in, you agree to our:</p>
   <a
@@ -78,8 +81,3 @@ export default function Login() {
     Terms of Service
   </a>
 </div>
-      </p>
-      </div>
-    </div>
-  );
-}
