@@ -172,9 +172,7 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
 }
 
-  if (!user) {
-    return <Login />; 
-  }
+  
 
   return (
     <div style={{ padding: 24, fontFamily: 'Arial' }}>
@@ -220,7 +218,8 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
         path="/play/:funnelId" 
         element={<QuizPlayer db={db} />} 
       />
-      <Route path="*" element={<h2>404 Not Found</h2>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
     </Routes>
         {notification.visible && (
       <div className={`custom-notification ${notification.type}`}>
