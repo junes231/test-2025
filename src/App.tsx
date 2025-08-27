@@ -391,6 +391,7 @@ const FunnelEditor: React.FC<FunnelEditorProps> = ({ db, updateFunnelData }) => 
   const [textColor, setTextColor] = useState(defaultFunnelData.textColor);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState<number | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [currentSubView, setCurrentSubView] = useState('mainEditorDashboard');
 
   const [debugLinkValue, setDebugLinkValue] = useState('Debug: N/A');
