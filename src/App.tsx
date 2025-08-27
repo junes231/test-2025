@@ -680,37 +680,34 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ db }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-  const getFunnelForPlay = async () => {
-    if (!funnelId) {
-      setError('No funnel ID provided!');
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const funnelDocRef = doc(db, 'funnels', funnelId);
-      const funnelDoc = await getDoc(funnelDocRef);
-
-      if (funnelDoc.exists()) {
-        const funnel = funnelDoc.data() as FunnelData;
-        setFunnelData({ ...defaultFunnelData, ...funnel });
-        console.log('QuizPlayer: Loaded funnel data for play:', funnel);
-      } else {
-        setError('Funnel not found! Please check the link or contact the funnel creator.');
+    const getFunnelForPlay = async () => {
+      if (!funnelId) {
+        setError('No funnel ID provided!');
+        setIsLoading(false);
+        return;
       }
-    } catch (err) {
-      console.error('Error loading funnel for play:', err);
-      setError('Failed to load quiz. Please check your internet connection and Firebase rules.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  getFunnelForPlay();
-}, [funnelId]);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const funnelDocRef = doc(db, 'funnels', funnelId);
+        const funnelDoc = await getDoc(funnelDocRef);
+        if (funnelDoc.exists()) {
+          const funnel = funnelDoc.data() as Funnel;
+          setFunnelData({ ...defaultFunnelData, ...funnel.data });
+          console.log('QuizPlayer: Loaded funnel data for play:', funnel.data);
+          console.log('QuizPlayer: Loaded finalRedirectLink for play:', funnel.data.finalRedirectLink);
+        } else {
+          setError('Funnel not found! Please check the link or contact the funnel creator.');
+        }
+      } catch (err) {
+        console.error('Error loading funnel for play:', err);
+        setError('Failed to load quiz. Please check your internet connection and Firebase rules.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    getFunnelForPlay();
+  }, [funnelId, db]);
 
   const handleAnswerClick = (answerIndex: number) => {
     if (isAnimating || !funnelData) return;
