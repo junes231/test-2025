@@ -172,9 +172,7 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
 }
 
-  if (!user) {
-    return <Login />; 
-  }
+  
 
   return (
   <div style={{ padding: 24, fontFamily: 'Arial' }}>
