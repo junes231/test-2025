@@ -56,8 +56,8 @@ export default function Login() {
 >
   {isLoginView ? 'Log in' : 'Register'}
 </button>
-</div>   {/* 这里要补一个关闭内层 div */}
-  </div>     {/* 这里要补一个关闭外层 div */}
+</div>   
+  </div>     
 );
 <p 
   onClick={() => setIsLoginView(!isLoginView)} 
