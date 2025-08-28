@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, ChangeEvent } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import PrivateRoute from './components/PrivateRoute.tsx';
-import { useNavigate, useParams, HashRouter, Routes, Route } from 'react-router-dom';
+import { useNavigate, useParams, Routes, Route } from 'react-router-dom';
 import {
   collection,
   doc,
@@ -177,70 +177,61 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   }
 
   return (
-    <div style={{ padding: 24, fontFamily: "Arial" }}>
-      {user && (
-        <div
-          style={{
-            marginBottom: 20,
-            paddingBottom: 20,
-            borderBottom: "1px solid #ccc",
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-          }}
-        >
-          <span>
-            Welcome, <strong>{user.email}</strong>!
-            {isAdmin && (
-              <span style={{ color: "red", marginLeft: "10px", fontWeight: "bold" }}>(Admin)</span>
-            )}
-          </span>
-          <button onClick={() => signOut(getAuth())} style={{ padding: "8px 15px" }}>
-            Logout
-          </button>
+    <div style={{ padding: 24, fontFamily: 'Arial' }}>
+       {user && (
+      <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <span>
+          Welcome, <strong>{user.email}</strong>!
+          {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
+        </span>
+        <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
+      </div>
+    )}
+      
+      <Routes>
+        <Route
+          path="/"
+          element={
+          <PrivateRoute>
+            <FunnelDashboard
+              db={db}
+              user={user}
+              isAdmin={isAdmin}
+              funnels={funnels}
+              setFunnels={setFunnels}
+              createFunnel={createFunnel}
+              deleteFunnel={deleteFunnel}
+            />
+          </PrivateRoute>
+        }
+      />
+   
+             <Route 
+        path="/edit/:funnelId" 
+        element={
+          <PrivateRoute>
+            <FunnelEditor db={db} updateFunnelData={updateFunnelData} />
+          </PrivateRoute>
+        } 
+      />
+      
+      {/* 公开路由 - 不需要认证 */}
+      <Route 
+        path="/play/:funnelId" 
+        element={<QuizPlayer db={db} />} 
+      />
+      <Route path="*" element={<h2>404 Not Found</h2>} />
+    </Routes>
+        {notification.visible && (
+      <div className={`custom-notification ${notification.type}`}>
+        <div className="notification-content">
+          {notification.message}
         </div>
-      )}
-
-      <HashRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <PrivateRoute>
-                <FunnelDashboard
-                  db={db}
-                  user={user}
-                  isAdmin={isAdmin}
-                  funnels={funnels}
-                  setFunnels={setFunnels}
-                  createFunnel={createFunnel}
-                  deleteFunnel={deleteFunnel}
-                />
-              </PrivateRoute>
-            }
-          />
-          <Route
-            path="/edit/:funnelId"
-            element={
-              <PrivateRoute>
-                <FunnelEditor db={db} updateFunnelData={updateFunnelData} />
-              </PrivateRoute>
-            }
-          />
-          {/* 公开路由 - 不需要认证 */}
-          <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
-          <Route path="*" element={<h2>404 Not Found</h2>} />
-        </Routes>
-      </HashRouter>
-
-      {notification.visible && (
-        <div className={`custom-notification ${notification.type}`}>
-          <div className="notification-content">{notification.message}</div>
-        </div>
-      )}
+      </div>
+    )}
     </div>
   );
-};
+}
 
 interface FunnelDashboardProps {
   db: Firestore;
