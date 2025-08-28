@@ -168,75 +168,71 @@ const showNotification = (message: string, type: 'success' | 'error' = 'success'
   };
 
   // --- Render Logic ---
-  if (user && isLoading) {  // 只有在有用户且正在加载时显示
-  return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
-}
-
-  
+  if (user && isLoading) {
+    return <div style={{ textAlign: 'center', marginTop: '50px', fontFamily: 'Arial' }}>Loading user data...</div>;
+  }
 
   return (
-  <div style={{ padding: 24, fontFamily: 'Arial' }}>
-    <Routes>
-      {/* 公开路由 - 任何人都能访问 */}
-      <Route 
-        path="/play/:funnelId" 
-        element={<QuizPlayer db={db} />} 
-      />
-      {/* 需要登录的路由 */}
-      <Route
-        path="/"
-        element={
-          !user
-            ? <Login />
-            : <>
-                <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>
-                    Welcome, <strong>{user.email}</strong>!
-                    {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
-                  </span>
-                  <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
-                </div>
-                <FunnelDashboard
-                  db={db}
-                  user={user}
-                  isAdmin={isAdmin}
-                  funnels={funnels}
-                  setFunnels={setFunnels}
-                  createFunnel={createFunnel}
-                  deleteFunnel={deleteFunnel}
-                />
-              </>
-        }
-      />
-      <Route 
-        path="/edit/:funnelId" 
-        element={
-          !user
-            ? <Login />
-            : <>
-                <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>
-                    Welcome, <strong>{user.email}</strong>!
-                    {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
-                  </span>
-                  <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
-                </div>
-                <FunnelEditor db={db} updateFunnelData={updateFunnelData} />
-              </>
-        }
-      />
-
-      <Route path="*" element={<h2>404 Not Found</h2>} />
-    </Routes>
-    {notification.visible && (
-      <div className={`custom-notification ${notification.type}`}>
-        <div className="notification-content">
-          {notification.message}
+    <div style={{ padding: 24, fontFamily: 'Arial' }}>
+      <Routes>
+        {/* 公开路由 */}
+        <Route path="/play/:funnelId" element={<QuizPlayer db={db} />} />
+        {/* 需要登录的路由 */}
+        <Route
+          path="/"
+          element={
+            !user
+              ? <Login />
+              : <>
+                  <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      Welcome, <strong>{user.email}</strong>!
+                      {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
+                    </span>
+                    <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
+                  </div>
+                  <FunnelDashboard
+                    db={db}
+                    user={user}
+                    isAdmin={isAdmin}
+                    funnels={funnels}
+                    setFunnels={setFunnels}
+                    createFunnel={createFunnel}
+                    deleteFunnel={deleteFunnel}
+                  />
+                </>
+          }
+        />
+        <Route
+          path="/edit/:funnelId"
+          element={
+            !user
+              ? <Login />
+              : <>
+                  <div style={{ marginBottom: 20, paddingBottom: 20, borderBottom: '1px solid #ccc', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      Welcome, <strong>{user.email}</strong>!
+                      {isAdmin && <span style={{color: 'red', marginLeft: '10px', fontWeight: 'bold'}}>(Admin)</span>}
+                    </span>
+                    <button onClick={() => signOut(getAuth())} style={{ padding: '8px 15px' }}>Logout</button>
+                  </div>
+                  <FunnelEditor db={db} updateFunnelData={updateFunnelData} />
+                </>
+          }
+        />
+        <Route path="*" element={<h2>404 Not Found</h2>} />
+      </Routes>
+      {notification.visible && (
+        <div className={`custom-notification ${notification.type}`}>
+          <div className="notification-content">
+            {notification.message}
+          </div>
         </div>
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
+}
+
 
 interface FunnelDashboardProps {
   db: Firestore;
