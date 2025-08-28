@@ -59,29 +59,31 @@ export default function Login() {
 </div>   
   </div>     
 );
-<p 
-  onClick={() => setIsLoginView(!isLoginView)} 
-  style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginBottom: 12 }}
->
-  {isLoginView ? "Don't have an account yet? Click here to register" : "Already have an account? Log in"}
-</p>
+<div>
+  <p 
+    onClick={() => setIsLoginView(!isLoginView)} 
+    style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline', marginBottom: 12 }}
+  >
+    {isLoginView ? "Don't have an account yet? Click here to register" : "Already have an account? Log in"}
+  </p>
 
-<div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: '#888' }}>
-  <p>By logging in, you agree to our:</p>
-  <a
-    href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ display: 'block', marginTop: 8, color: '#888', textDecoration: 'underline' }}
-  >
-    Privacy Policy
-  </a>
-  <a
-    href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md"
-    target="_blank"
-    rel="noopener noreferrer"
-    style={{ display: 'block', marginTop: 8, color: '#888', textDecoration: 'underline' }}
-  >
-    Terms of Service
-  </a>
+  <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: '#888' }}>
+    <p>By logging in, you agree to our:</p>
+    <a
+      href="https://github.com/junes231/myfunnel-legal/blob/main/PRIVACY_POLICY.md"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: 'block', marginTop: 8, color: '#888', textDecoration: 'underline' }}
+    >
+      Privacy Policy
+    </a>
+    <a
+      href="https://github.com/junes231/myfunnel-legal/blob/main/TERMS_OF_SERVICE.md"
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ display: 'block', marginTop: 8, color: '#888', textDecoration: 'underline' }}
+    >
+      Terms of Service
+    </a>
+  </div>
 </div>
